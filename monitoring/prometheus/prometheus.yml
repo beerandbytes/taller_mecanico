@@ -1,0 +1,90 @@
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'taller-mecanico-monitor'
+    environment: 'production'
+    cluster: 'taller-mecanico'
+
+# Configuración de alertas
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # Para usar Alertmanager en el futuro, descomentar y configurar:
+          # - targets: ['alertmanager:9093']
+
+# Reglas de alertas
+rule_files:
+  - "/etc/prometheus/alerts.yml"
+
+# Configuración de scraping
+scrape_configs:
+  # Métricas de Prometheus mismo
+  - job_name: 'prometheus'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['localhost:9090']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'prometheus'
+
+  # Métricas de la aplicación PHP
+  - job_name: 'php-app'
+    scrape_interval: 10s
+    scrape_timeout: 8s
+    metrics_path: '/metrics.php'
+    static_configs:
+      - targets: ['web:80']
+        labels:
+          service: 'taller-mecanico-web'
+          component: 'application'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'php-app'
+      - source_labels: [__param_method]
+        target_label: method
+      - source_labels: [__param_status]
+        target_label: status
+
+  # Métricas del sistema (Node Exporter)
+  - job_name: 'node-exporter'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          component: 'infrastructure'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'node-exporter'
+    metric_relabel_configs:
+      # Excluir métricas de sistema de archivos que no son relevantes en contenedores
+      - source_labels: [__name__]
+        regex: 'node_filesystem_(files|free|avail|size)_bytes'
+        action: keep
+
+  # Métricas de MySQL
+  - job_name: 'mysqld-exporter'
+    scrape_interval: 30s
+    scrape_timeout: 15s
+    static_configs:
+      - targets: ['mysqld-exporter:9104']
+        labels:
+          service: 'mysql'
+          component: 'database'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'mysql'
+    metric_relabel_configs:
+      # Mantener solo métricas relevantes de MySQL
+      - source_labels: [__name__]
+        regex: 'mysql_.*'
+        action: keep

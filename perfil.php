@@ -1,199 +1,158 @@
 <?php
-require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/config/database.php';
-iniciarSesion();
+// perfil.php
+require_once 'config/db.php';
+require_once 'includes/header.php';
 
-// Verificar que el usuario esté logueado
-if (!verificarSesion()) {
-    header("Location: login.php");
-    exit();
+if (!isLoggedIn()) {
+    redirect('login.php');
 }
 
-$tituloPagina = "Mi Perfil";
-require_once __DIR__ . '/includes/header.php';
+$idUser = $_SESSION['user_id'];
+$errors = [];
+$success = '';
 
-$errores = [];
-$mensajeExito = '';
-$usuarioActual = obtenerUsuarioActual();
+// Fetch current data
+try {
+    $stmt = $pdo->prepare("
+        SELECT d.*, l.usuario 
+        FROM users_data d 
+        JOIN users_login l ON d.idUser = l.idUser 
+        WHERE d.idUser = ?
+    ");
+    $stmt->execute([$idUser]);
+    $user = $stmt->fetch();
+} catch (PDOException $e) {
+    die("Error al cargar datos del usuario.");
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $datos = sanitizarDatos($_POST);
-    
-    // Si es actualización de datos personales
-    if (isset($datos['actualizar_perfil'])) {
-        $camposObligatorios = ['nombre', 'apellidos', 'email', 'telefono', 'fecha_de_nacimiento', 'sexo'];
-        $errores = validarCamposObligatorios($datos, $camposObligatorios);
-        
-        // Validar email
-        if (!empty($datos['email']) && !validarEmail($datos['email'])) {
-            $errores[] = "El email no es válido";
-        }
-        
-        // Validar email único (excepto el del usuario actual)
-        if (empty($errores) && !empty($datos['email'])) {
-            try {
-                $stmt = $pdo->prepare("SELECT idUser FROM users_data WHERE email = ? AND idUser != ?");
-                $stmt->execute([$datos['email'], $_SESSION['idUser']]);
-                if ($stmt->fetch()) {
-                    $errores[] = "El email ya está registrado por otro usuario";
-                }
-            } catch (PDOException $e) {
-                $errores[] = "Error al verificar el email";
-            }
-        }
-        
-        if (empty($errores)) {
-            try {
-                $stmt = $pdo->prepare("
-                    UPDATE users_data 
-                    SET nombre = ?, apellidos = ?, email = ?, telefono = ?, 
-                        fecha_de_nacimiento = ?, direccion = ?, sexo = ?
-                    WHERE idUser = ?
-                ");
-                $stmt->execute([
-                    $datos['nombre'],
-                    $datos['apellidos'],
-                    $datos['email'],
-                    $datos['telefono'],
-                    $datos['fecha_de_nacimiento'],
-                    $datos['direccion'] ?? null,
-                    $datos['sexo'],
-                    $_SESSION['idUser']
-                ]);
-                
-                $mensajeExito = "Perfil actualizado correctamente";
-                $usuarioActual = obtenerUsuarioActual(); // Actualizar datos
-            } catch (PDOException $e) {
-                $errores[] = "Error al actualizar el perfil";
-            }
-        }
+    // Sanitize input
+    $nombre = sanitize($_POST['nombre']);
+    $apellidos = sanitize($_POST['apellidos']);
+    $email = sanitize($_POST['email']);
+    $telefono = sanitize($_POST['telefono']);
+    $fecha_nacimiento = sanitize($_POST['fecha_nacimiento']);
+    $direccion = sanitize($_POST['direccion']);
+    $sexo = sanitize($_POST['sexo']);
+    $new_password = $_POST['new_password'];
+
+    // Validations (simplified)
+    if (empty($nombre) || empty($apellidos) || empty($email)) {
+        $errors[] = "Campos obligatorios faltantes.";
     }
-    
-    // Si es cambio de contraseña
-    if (isset($datos['cambiar_password'])) {
-        if (empty($datos['nueva_password']) || empty($datos['confirmar_password'])) {
-            $errores[] = "Todos los campos de contraseña son obligatorios";
-        } elseif ($datos['nueva_password'] !== $datos['confirmar_password']) {
-            $errores[] = "Las contraseñas no coinciden";
-        } elseif (strlen($datos['nueva_password']) < 6) {
-            $errores[] = "La contraseña debe tener al menos 6 caracteres";
-        } else {
-            try {
-                $passwordHash = password_hash($datos['nueva_password'], PASSWORD_DEFAULT);
+
+    if (empty($errors)) {
+        try {
+            $pdo->beginTransaction();
+
+            // Update user data
+            $stmt = $pdo->prepare("
+                UPDATE users_data 
+                SET nombre = ?, apellidos = ?, email = ?, telefono = ?, fecha_de_nacimiento = ?, direccion = ?, sexo = ? 
+                WHERE idUser = ?
+            ");
+            $stmt->execute([$nombre, $apellidos, $email, $telefono, $fecha_nacimiento, $direccion, $sexo, $idUser]);
+
+            // Update password if provided
+            if (!empty($new_password)) {
+                $hashed = password_hash($new_password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("UPDATE users_login SET password = ? WHERE idUser = ?");
-                $stmt->execute([$passwordHash, $_SESSION['idUser']]);
-                $mensajeExito = "Contraseña actualizada correctamente";
-            } catch (PDOException $e) {
-                $errores[] = "Error al actualizar la contraseña";
+                $stmt->execute([$hashed, $idUser]);
             }
+
+            $pdo->commit();
+            $success = "Perfil actualizado correctamente.";
+            
+            // Refresh data
+            $stmt = $pdo->prepare("SELECT d.*, l.usuario FROM users_data d JOIN users_login l ON d.idUser = l.idUser WHERE d.idUser = ?");
+            $stmt->execute([$idUser]);
+            $user = $stmt->fetch();
+
+        } catch (PDOException $e) {
+            $pdo->rollBack();
+            $errors[] = "Error al actualizar: " . $e->getMessage();
         }
     }
 }
 ?>
 
-<h1>Mi Perfil</h1>
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white py-3">
+                <h2 class="h5 mb-0"><i class="bi bi-person-circle me-2"></i>Mi Perfil</h2>
+            </div>
+            <div class="card-body p-4">
+                <?php if ($success): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <?= $success ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($errors)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <?= implode('<br>', $errors) ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <?php endif; ?>
 
-<?php if (!empty($errores)): ?>
-    <div class="mensaje error">
-        <ul>
-            <?php foreach ($errores as $error): ?>
-                <li><?php echo htmlspecialchars($error); ?></li>
-            <?php endforeach; ?>
-        </ul>
+                <form action="perfil.php" method="POST">
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label fw-bold">Usuario</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control-plaintext" value="<?= htmlspecialchars($user['usuario']) ?>" readonly>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 text-muted border-bottom pb-2">Datos Personales</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" name="nombre" id="nombre" class="form-control" value="<?= htmlspecialchars($user['nombre']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="apellidos" class="form-label">Apellidos</label>
+                            <input type="text" name="apellidos" id="apellidos" class="form-control" value="<?= htmlspecialchars($user['apellidos']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" name="email" id="email" class="form-control" value="<?= htmlspecialchars($user['email']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" name="telefono" id="telefono" class="form-control" value="<?= htmlspecialchars($user['telefono']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" class="form-control" value="<?= htmlspecialchars($user['fecha_de_nacimiento']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sexo" class="form-label">Sexo</label>
+                            <select name="sexo" id="sexo" class="form-select">
+                                <option value="Masculino" <?= $user['sexo'] == 'Masculino' ? 'selected' : '' ?>>Masculino</option>
+                                <option value="Femenino" <?= $user['sexo'] == 'Femenino' ? 'selected' : '' ?>>Femenino</option>
+                                <option value="Otro" <?= $user['sexo'] == 'Otro' ? 'selected' : '' ?>>Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <input type="text" name="direccion" id="direccion" class="form-control" value="<?= htmlspecialchars($user['direccion']) ?>">
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-muted border-bottom pb-2">Seguridad</h5>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">Nueva Contraseña (Dejar en blanco para cancelar)</label>
+                        <input type="password" name="new_password" id="new_password" class="form-control" placeholder="********">
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-<?php endif; ?>
+</div>
 
-<?php if ($mensajeExito): ?>
-    <div class="mensaje exito">
-        <?php echo htmlspecialchars($mensajeExito); ?>
-    </div>
-<?php endif; ?>
-
-<?php if ($usuarioActual): ?>
-    <div class="perfil-container">
-        <section class="perfil-datos">
-            <h2>Datos Personales</h2>
-            <form method="POST" action="" class="form-perfil">
-                <input type="hidden" name="actualizar_perfil" value="1">
-                
-                <div class="form-group">
-                    <label for="usuario">Usuario</label>
-                    <input type="text" id="usuario" value="<?php echo htmlspecialchars($usuarioActual['usuario']); ?>" disabled>
-                    <small>El nombre de usuario no se puede cambiar</small>
-                </div>
-                
-                <div class="form-group">
-                    <label for="nombre">Nombre *</label>
-                    <input type="text" id="nombre" name="nombre" required
-                           value="<?php echo htmlspecialchars($usuarioActual['nombre']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="apellidos">Apellidos *</label>
-                    <input type="text" id="apellidos" name="apellidos" required
-                           value="<?php echo htmlspecialchars($usuarioActual['apellidos']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email *</label>
-                    <input type="email" id="email" name="email" required
-                           value="<?php echo htmlspecialchars($usuarioActual['email']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="telefono">Teléfono *</label>
-                    <input type="text" id="telefono" name="telefono" required
-                           value="<?php echo htmlspecialchars($usuarioActual['telefono']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="fecha_de_nacimiento">Fecha de Nacimiento *</label>
-                    <input type="date" id="fecha_de_nacimiento" name="fecha_de_nacimiento" required
-                           value="<?php echo htmlspecialchars($usuarioActual['fecha_de_nacimiento']); ?>">
-                </div>
-                
-                <div class="form-group">
-                    <label for="direccion">Dirección</label>
-                    <textarea id="direccion" name="direccion" rows="3"><?php echo htmlspecialchars($usuarioActual['direccion'] ?? ''); ?></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="sexo">Sexo *</label>
-                    <select id="sexo" name="sexo" required>
-                        <option value="Masculino" <?php echo ($usuarioActual['sexo'] === 'Masculino') ? 'selected' : ''; ?>>Masculino</option>
-                        <option value="Femenino" <?php echo ($usuarioActual['sexo'] === 'Femenino') ? 'selected' : ''; ?>>Femenino</option>
-                        <option value="Otro" <?php echo ($usuarioActual['sexo'] === 'Otro') ? 'selected' : ''; ?>>Otro</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Actualizar Perfil</button>
-                </div>
-            </form>
-        </section>
-        
-        <section class="perfil-password">
-            <h2>Cambiar Contraseña</h2>
-            <form method="POST" action="" class="form-password">
-                <input type="hidden" name="cambiar_password" value="1">
-                
-                <div class="form-group">
-                    <label for="nueva_password">Nueva Contraseña *</label>
-                    <input type="password" id="nueva_password" name="nueva_password" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="confirmar_password">Confirmar Nueva Contraseña *</label>
-                    <input type="password" id="confirmar_password" name="confirmar_password" required>
-                </div>
-                
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
-                </div>
-            </form>
-        </section>
-    </div>
-<?php endif; ?>
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
-
+<?php require_once 'includes/footer.php'; ?>

@@ -30,15 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($_FILES['imagen']['name'])) {
             $errores[] = "La imagen es obligatoria";
         } else {
-            $imagen = $_FILES['imagen'];
-            $tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-            $tamanoMaximo = 5 * 1024 * 1024; // 5MB
-            
-            if (!in_array($imagen['type'], $tiposPermitidos)) {
-                $errores[] = "El archivo debe ser una imagen (JPG, PNG o GIF)";
-            } elseif ($imagen['size'] > $tamanoMaximo) {
-                $errores[] = "La imagen es demasiado grande (máximo 5MB)";
-            }
+            $erroresImagen = validarArchivoImagen($_FILES['imagen']);
+            $errores = array_merge($errores, $erroresImagen);
         }
         
         // Validar título único
@@ -56,10 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (empty($errores)) {
             try {
-                // Subir imagen
-                $extension = pathinfo($imagen['name'], PATHINFO_EXTENSION);
-                $nombreImagen = uniqid() . '.' . $extension;
+                // Subir imagen con nombre sanitizado
+                $imagen = $_FILES['imagen'];
+                $nombreImagen = sanitizarNombreArchivo($imagen['name']);
                 $rutaImagen = 'assets/images/' . $nombreImagen;
+                
+                // Ensure directory exists
+                $uploadDir = dirname($rutaImagen);
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
                 
                 if (!move_uploaded_file($imagen['tmp_name'], $rutaImagen)) {
                     throw new Exception("Error al subir la imagen");
@@ -105,17 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (empty($errores)) {
             try {
+                $rutaImagen = null;
+                
                 // Si se sube una nueva imagen
                 if (!empty($_FILES['imagen']['name'])) {
-                    $imagen = $_FILES['imagen'];
-                    $tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-                    $tamanoMaximo = 5 * 1024 * 1024;
-                    
-                    if (!in_array($imagen['type'], $tiposPermitidos)) {
-                        $errores[] = "El archivo debe ser una imagen (JPG, PNG o GIF)";
-                    } elseif ($imagen['size'] > $tamanoMaximo) {
-                        $errores[] = "La imagen es demasiado grande (máximo 5MB)";
-                    } else {
+                    $erroresImagen = validarArchivoImagen($_FILES['imagen']);
+                    if (empty($erroresImagen)) {
+                        $imagen = $_FILES['imagen'];
                         // Obtener imagen anterior para eliminarla
                         $stmt = $pdo->prepare("SELECT imagen FROM noticias WHERE idNoticia = ?");
                         $stmt->execute([$idNoticia]);
@@ -125,15 +120,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             unlink($noticiaAnterior['imagen']);
                         }
                         
-                        // Subir nueva imagen
-                        $extension = pathinfo($imagen['name'], PATHINFO_EXTENSION);
-                        $nombreImagen = uniqid() . '.' . $extension;
+                        // Subir nueva imagen con nombre sanitizado
+                        $nombreImagen = sanitizarNombreArchivo($imagen['name']);
                         $rutaImagen = 'assets/images/' . $nombreImagen;
+                        
+                        // Ensure directory exists
+                        $uploadDir = dirname($rutaImagen);
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
+                        }
                         
                         if (!move_uploaded_file($imagen['tmp_name'], $rutaImagen)) {
                             throw new Exception("Error al subir la imagen");
                         }
-                        
+                    } else {
+                        $errores = array_merge($errores, $erroresImagen);
+                    }
+                }
+                
+                // Update database
+                if (empty($errores)) {
+                    if ($rutaImagen !== null) {
+                        // Update with new image
                         $stmt = $pdo->prepare("
                             UPDATE noticias 
                             SET titulo = ?, imagen = ?, texto = ?, fecha = ?
@@ -146,23 +154,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $datos['fecha'],
                             $idNoticia
                         ]);
+                    } else {
+                        // No se cambia la imagen
+                        $stmt = $pdo->prepare("
+                            UPDATE noticias 
+                            SET titulo = ?, texto = ?, fecha = ?
+                            WHERE idNoticia = ?
+                        ");
+                        $stmt->execute([
+                            $datos['titulo'],
+                            $datos['texto'],
+                            $datos['fecha'],
+                            $idNoticia
+                        ]);
                     }
-                } else {
-                    // No se cambia la imagen
-                    $stmt = $pdo->prepare("
-                        UPDATE noticias 
-                        SET titulo = ?, texto = ?, fecha = ?
-                        WHERE idNoticia = ?
-                    ");
-                    $stmt->execute([
-                        $datos['titulo'],
-                        $datos['texto'],
-                        $datos['fecha'],
-                        $idNoticia
-                    ]);
-                }
-                
-                if (empty($errores)) {
+                    
                     $mensajeExito = "Noticia actualizada correctamente";
                     $idNoticiaEditar = null;
                     $noticiaEditar = null;

@@ -1,46 +1,133 @@
 <?php
-$tituloPagina = "Inicio";
-require_once __DIR__ . '/includes/header.php';
+// index.php
+require_once 'includes/header.php';
 ?>
 
-<section class="hero">
-    <h1>Bienvenido a Nuestro Sitio Web</h1>
-    <p>Este es un sitio web desarrollado con PHP y MySQL como trabajo final del módulo.</p>
-</section>
+<div class="hero-section text-center p-5 mb-5 rounded shadow-lg d-flex align-items-center justify-content-center">
+    <div class="hero-content">
+        <h1 class="display-3 fw-bold mb-3">Tu Coche, En Las Mejores Manos</h1>
+        <p class="lead mb-4 fs-4">Expertos en Mecánica General, Electricidad y Preparación ITV.<br>Garantía de calidad y rapidez.</p>
+        <?php if (!isLoggedIn()): ?>
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="citaciones.php" class="btn btn-primary btn-lg px-5 py-3 fw-bold">Pedir Cita Ahora</a>
+                <a href="registro.php" class="btn btn-outline-light btn-lg px-5 py-3">Registrarse</a>
+            </div>
+        <?php else: ?>
+            <a href="citaciones.php" class="btn btn-primary btn-lg px-5 py-3 fw-bold">Reservar Cita Previa</a>
+        <?php endif; ?>
+    </div>
+</div>
 
-<section class="features">
-    <h2>Características del Sitio</h2>
-    <div class="feature-grid">
-        <div class="feature-card">
-            <h3>Gestión de Usuarios</h3>
-            <p>Sistema completo de registro e inicio de sesión con diferentes roles de usuario.</p>
+<!-- Trust Signals Section -->
+<div class="row text-center mb-5 py-4 bg-light rounded mx-1">
+    <div class="col-md-3 mb-3 mb-md-0">
+        <h2 class="h1 fw-bold text-primary mb-0">15+</h2>
+        <p class="text-muted">Años de Experiencia</p>
+    </div>
+    <div class="col-md-3 mb-3 mb-md-0">
+        <h2 class="h1 fw-bold text-primary mb-0">5000+</h2>
+        <p class="text-muted">Clientes Satisfechos</p>
+    </div>
+    <div class="col-md-3 mb-3 mb-md-0">
+        <h2 class="h1 fw-bold text-primary mb-0">100%</h2>
+        <p class="text-muted">Garantía en Reparaciones</p>
+    </div>
+    <div class="col-md-3">
+        <h2 class="h1 fw-bold text-primary mb-0">24h</h2>
+        <p class="text-muted">Atención Urgente</p>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="card h-100 feature-card shadow-sm border-0">
+            <div class="card-body text-center p-4">
+                <div class="card-icon mb-3">
+                    <i class="bi bi-shield-check text-primary"></i>
+                </div>
+                <h3 class="card-title h4 fw-bold">Certificaciones ITV</h3>
+                <p class="card-text text-muted">Olvídate de rechazos. Preparamos tu coche al detalle para que pase la ITV a la primera.</p>
+                <a href="consejo.php?id=2" class="btn btn-outline-primary mt-3 stretched-link">Saber más</a>
+            </div>
         </div>
-        <div class="feature-card">
-            <h3>Noticias</h3>
-            <p>Consulta las últimas noticias publicadas por nuestros administradores.</p>
-            <a href="noticias.php" class="btn">Ver Noticias</a>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 feature-card shadow-sm border-0">
+            <div class="card-body text-center p-4">
+                <div class="card-icon mb-3">
+                    <i class="bi bi-wrench text-primary"></i>
+                </div>
+                <h3 class="card-title h4 fw-bold">Mecánica Integral</h3>
+                <p class="card-text text-muted">Desde cambios de aceite hasta reparaciones de motor complejas. Usamos recambios de primeras marcas.</p>
+                <a href="citaciones.php" class="btn btn-primary mt-3 stretched-link">Pedir Cita</a>
+            </div>
         </div>
-        <div class="feature-card">
-            <h3>Gestión de Citas</h3>
-            <p>Los usuarios registrados pueden solicitar y gestionar sus citas.</p>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 feature-card shadow-sm border-0">
+            <div class="card-body text-center p-4">
+                <div class="card-icon mb-3">
+                    <i class="bi bi-cpu text-primary"></i>
+                </div>
+                <h3 class="card-title h4 fw-bold">Diagnóstico Avanzado</h3>
+                <p class="card-text text-muted">Detectamos averías "fantasmas" con equipos de última generación. Ahorra tiempo y dinero.</p>
+            </div>
         </div>
+    </div>
+</div>
+
+<section class="mb-5 bg-white p-5 rounded shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1">Consejos para tu Vehículo</h2>
+            <p class="text-muted mb-0">Guías y recomendaciones de nuestros mecánicos expertos.</p>
+        </div>
+        <a href="noticias.php#consejos" class="btn btn-outline-primary btn-sm">Ver todos</a>
+    </div>
+    
+    <div class="row g-4">
+        <?php
+        // Fetch latest 3 tips
+        // Ensure $pdo is available. If included via header it might not be, so checking/requiring just in case.
+        if (!isset($pdo)) {
+            require_once 'config/db.php';
+        }
+        
+        $consejos = getLatestTips($pdo, 3);
+            
+        if ($consejos):
+            foreach($consejos as $consejo):
+        ?>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm hover-card">
+                    <?php if($consejo['imagen']): ?>
+                        <div class="card-img-wrapper">
+                            <img src="<?= htmlspecialchars($consejo['imagen']) ?>" class="card-img-custom" alt="<?= htmlspecialchars($consejo['titulo']) ?>">
+                        </div>
+                    <?php endif; ?>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <span class="badge bg-primary">Consejo</span>
+                        </div>
+                        <h5 class="card-title"><?= htmlspecialchars($consejo['titulo']) ?></h5>
+                        <p class="card-text text-muted small"><?= strip_tags(substr($consejo['texto'], 0, 100)) ?>...</p>
+                        <a href="consejo.php?id=<?= $consejo['idConsejo'] ?>" class="btn btn-sm btn-outline-primary stretched-link">Leer más</a>
+                    </div>
+                </div>
+            </div>
+        <?php 
+                endforeach;
+            else:
+        ?>
+            <div class="col-12 text-center text-muted">
+                <p>No hay consejos disponibles en este momento.</p>
+            </div>
+        <?php 
+            endif;
+        ?>
     </div>
 </section>
 
-<section class="about">
-    <h2>Sobre Nosotros</h2>
-    <p>Este sitio web ha sido desarrollado utilizando las tecnologías más modernas:</p>
-    <ul>
-        <li><strong>HTML5</strong> para la estructura</li>
-        <li><strong>CSS3</strong> para el diseño</li>
-        <li><strong>JavaScript</strong> para la interactividad</li>
-        <li><strong>PHP</strong> para el backend</li>
-        <li><strong>MySQL</strong> para la base de datos</li>
-    </ul>
-    <?php if (file_exists('assets/images/placeholder.jpg')): ?>
-        <img src="assets/images/placeholder.jpg" alt="Tecnologías web" class="about-image">
-    <?php endif; ?>
-</section>
-
-<?php require_once __DIR__ . '/includes/footer.php'; ?>
-
+<?php require_once 'includes/footer.php'; ?>

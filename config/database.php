@@ -1,11 +1,12 @@
 <?php
 // Configuración de conexión a la base de datos
-// Cambiar estos valores según tu configuración de MySQL
+// Soporta variables de entorno (para Docker) y configuración tradicional
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'trabajo_final_php');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// Leer variables de entorno o usar valores por defecto
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('DB_NAME') ?: 'trabajo_final_php');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') ?: '');
 
 try {
     $pdo = new PDO(

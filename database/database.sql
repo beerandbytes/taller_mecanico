@@ -1,56 +1,92 @@
--- Base de datos para el Trabajo Final PHP/MySQL
--- Crear base de datos
-CREATE DATABASE IF NOT EXISTS trabajo_final_php CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE trabajo_final_php;
+-- Database Creation
+-- Note: Manually create database 'trabajo_final_php' if it doesn't exist. Shared hosting often creates it for you.
+-- CREATE DATABASE IF NOT EXISTS trabajo_final_php;
+-- USE trabajo_final_php;
 
--- Tabla users_data: Información personal de los usuarios
+-- Table: users_data
 CREATE TABLE IF NOT EXISTS users_data (
     idUser INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
     telefono VARCHAR(20) NOT NULL,
     fecha_de_nacimiento DATE NOT NULL,
     direccion TEXT,
+    calle VARCHAR(255),
+    codigo_postal VARCHAR(10),
+    ciudad VARCHAR(100),
+    provincia VARCHAR(100),
     sexo ENUM('Masculino', 'Femenino', 'Otro') NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- Tabla users_login: Información de inicio de sesión
+-- Table: users_login
 CREATE TABLE IF NOT EXISTS users_login (
     idLogin INT AUTO_INCREMENT PRIMARY KEY,
     idUser INT NOT NULL UNIQUE,
     usuario VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    rol ENUM('admin', 'user') NOT NULL,
+    rol ENUM('admin', 'user') NOT NULL DEFAULT 'user',
     FOREIGN KEY (idUser) REFERENCES users_data(idUser) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- Tabla citas: Citas de los usuarios
+-- Table: citas
 CREATE TABLE IF NOT EXISTS citas (
     idCita INT AUTO_INCREMENT PRIMARY KEY,
-    idUser INT NOT NULL,
+    idUser INT NULL,
     fecha_cita DATE NOT NULL,
+    hora_cita TIME NOT NULL,
     motivo_cita TEXT,
+    guest_name VARCHAR(100),
+    guest_email VARCHAR(150),
+    guest_phone VARCHAR(20),
     FOREIGN KEY (idUser) REFERENCES users_data(idUser) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- Tabla noticias: Noticias escritas por administradores
+-- Table: noticias
 CREATE TABLE IF NOT EXISTS noticias (
     idNoticia INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL UNIQUE,
+    titulo VARCHAR(200) NOT NULL UNIQUE,
     imagen VARCHAR(255) NOT NULL,
     texto TEXT NOT NULL,
     fecha DATE NOT NULL,
     idUser INT NOT NULL,
     FOREIGN KEY (idUser) REFERENCES users_data(idUser) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
--- Insertar usuario administrador de ejemplo
--- Contraseña: admin123 (encriptada con password_hash)
-INSERT INTO users_data (nombre, apellidos, email, telefono, fecha_de_nacimiento, direccion, sexo) 
-VALUES ('Admin', 'Sistema', 'admin@sistema.com', '123456789', '1990-01-01', 'Calle Admin 123', 'Masculino');
+-- Table: consejos
+CREATE TABLE IF NOT EXISTS consejos (
+    idConsejo INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(200) NOT NULL,
+    imagen VARCHAR(255),
+    texto TEXT NOT NULL,
+    fecha DATE NOT NULL,
+    idUser INT NOT NULL,
+    FOREIGN KEY (idUser) REFERENCES users_data(idUser) ON DELETE CASCADE
+);
 
-INSERT INTO users_login (idUser, usuario, password, rol) 
-VALUES (1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
--- La contraseña 'admin123' está encriptada con password_hash de PHP
+-- Performance Indexes
+-- Indexes for frequently queried columns to improve query performance
 
+-- Indexes for citas table
+CREATE INDEX idx_citas_fecha ON citas(fecha_cita);
+CREATE INDEX idx_citas_fecha_hora ON citas(fecha_cita, hora_cita);
+CREATE INDEX idx_citas_iduser ON citas(idUser);
+
+-- Indexes for noticias table
+CREATE INDEX idx_noticias_fecha ON noticias(fecha);
+CREATE INDEX idx_noticias_iduser ON noticias(idUser);
+
+-- Indexes for consejos table
+CREATE INDEX idx_consejos_fecha ON consejos(fecha);
+CREATE INDEX idx_consejos_iduser ON consejos(idUser);
+
+-- Indexes for users_data table (email already has UNIQUE index)
+CREATE INDEX idx_users_data_nombre ON users_data(nombre);
+CREATE INDEX idx_users_data_apellidos ON users_data(apellidos);
+
+-- Indexes for users_login table (usuario already has UNIQUE index)
+CREATE INDEX idx_users_login_rol ON users_login(rol);
+
+-- Optional: Insert a default admin user for testing
+-- Note: Password hash logic will need to be manual or handled via script if we want a pre-made admin.
+-- For now, we will leave it empty and assume the user creates it or we provide a script later.
