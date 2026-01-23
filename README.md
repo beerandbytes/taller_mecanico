@@ -32,7 +32,8 @@ taller_mecanico/
 ├── includes/
 │   ├── header.php          # Barra de navegación y header común
 │   ├── footer.php          # Footer común
-│   └── functions.php       # Funciones auxiliares
+│   ├── functions.php       # Funciones auxiliares
+│   └── metrics_logger.php  # Sistema de logging de métricas HTTP
 ├── assets/
 │   ├── css/
 │   │   └── style.css       # Estilos principales
@@ -65,7 +66,8 @@ taller_mecanico/
 ├── README.md                # Este archivo
 ├── GUIA_USUARIO.md          # Guía de usuario completa
 ├── STACK_TECNOLOGICO.md     # Stack tecnológico detallado
-└── DOCKER_DEPLOYMENT.md     # Guía de despliegue Docker
+├── DOCKER_DEPLOYMENT.md     # Guía de despliegue Docker
+└── MONITORING.md            # Guía del sistema de monitoreo
 ```
 
 ## Requisitos Previos
@@ -158,7 +160,9 @@ docker-compose ps
 
 **Acceso a los servicios:**
 - 🌐 **Aplicación Web:** http://localhost:8080
-- 📊 **Grafana (Monitorización):** http://localhost:3000 (usuario: `admin`, contraseña: `admin123`)
+- 📊 **Grafana (Monitorización):** http://localhost:3000
+  - **Usuario:** `admin`
+  - **Contraseña:** `admin123`
 - 📈 **Prometheus:** http://localhost:9090
 
 **Nota para Windows:** Asegúrate de que Docker Desktop esté ejecutándose antes de ejecutar los comandos. La primera vez puede tardar varios minutos en descargar las imágenes.
@@ -427,7 +431,9 @@ El proyecto implementa múltiples capas de seguridad:
 
 ## 📊 Monitorización
 
-El proyecto incluye un sistema completo de monitorización con Prometheus y Grafana (disponible solo con Docker):
+El proyecto incluye un sistema completo de monitorización con Prometheus y Grafana (disponible solo con Docker).
+
+**📖 Para información detallada sobre el sistema de monitoreo, consulta [MONITORING.md](MONITORING.md)**
 
 ### Componentes de Monitorización
 
@@ -443,7 +449,10 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 
 **Grafana** - Visualización de métricas
 - Puerto: 3000 (configurable en `.env`)
-- Credenciales por defecto: `admin` / `admin123`
+- **Credenciales de acceso:**
+  - **Usuario:** `admin` (configurable en `.env` con `GRAFANA_ADMIN_USER`)
+  - **Contraseña:** `admin123` (configurable en `.env` con `GRAFANA_ADMIN_PASSWORD`)
+- URL de acceso: http://localhost:3000
 - Datasource configurado automáticamente
 - Dashboards preconfigurados:
   - 📈 **Sistema** (`sistema.json`) - CPU, memoria, disco, red
@@ -458,7 +467,11 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 - **Base de Datos (MySQL Exporter):** Conexiones, consultas por segundo, operaciones de lectura/escritura, tamaño de BD
 - **Negocio (PHP Exporter):** Total de usuarios, usuarios por rol, total de citas, total de noticias
 
-**⚠️ Nota:** La monitorización solo está disponible cuando se despliega con Docker. Para más información, consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+**⚠️ Nota:** La monitorización solo está disponible cuando se despliega con Docker. 
+
+**📚 Documentación:**
+- **[MONITORING.md](MONITORING.md)** - Guía completa del sistema de monitoreo
+- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guía de despliegue con Docker
 
 ## 📚 Documentación Adicional
 

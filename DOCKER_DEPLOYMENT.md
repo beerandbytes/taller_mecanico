@@ -128,8 +128,8 @@ docker ps
 
 - **Aplicación Web:** http://localhost:8080
 - **Grafana (Monitorización):** http://localhost:3000
-  - Usuario: `admin` (o el configurado en `.env`)
-  - Contraseña: `admin123` (o la configurada en `.env`)
+  - **Usuario:** `admin` (o el configurado en `.env` con `GRAFANA_ADMIN_USER`)
+  - **Contraseña:** `admin123` (o la configurada en `.env` con `GRAFANA_ADMIN_PASSWORD`)
 - **Prometheus:** http://localhost:9090
 
 ## Servicios Incluidos

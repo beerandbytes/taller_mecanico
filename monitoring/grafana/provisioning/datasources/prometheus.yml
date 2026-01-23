@@ -12,9 +12,5 @@ datasources:
       timeInterval: "15s"
       httpMethod: "POST"
       queryTimeout: "60s"
-      exemplarTraceIdDestinations:
-        - name: trace_id
-          datasourceUid: jaeger
-          tags: ["job", "instance"]
     secureJsonData: {}
     version: 1

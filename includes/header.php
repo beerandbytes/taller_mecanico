@@ -4,6 +4,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/metrics_logger.php';
+
+// Iniciar medición del tiempo de respuesta para métricas
+startResponseTimeMeasurement();
 
 // Get current page for active state
 $current_page = basename($_SERVER['PHP_SELF']);

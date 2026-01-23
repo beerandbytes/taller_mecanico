@@ -152,9 +152,33 @@ function obtenerSesionesActivas() {
     }
 }
 
+// Función para obtener la ruta del directorio de logs
+function obtenerDirectorioLogs() {
+    $possiblePaths = [
+        __DIR__ . '/logs',                    // Local development (desde monitoring/php-exporter/)
+        __DIR__ . '/../logs',                 // Docker (desde /var/www/html/)
+        dirname(__DIR__) . '/logs',           // Alternative path
+        '/var/www/html/logs'                  // Docker absolute path
+    ];
+    
+    foreach ($possiblePaths as $path) {
+        if (is_dir($path)) {
+            return $path;
+        }
+    }
+    
+    // Fallback: intentar crear el directorio
+    $defaultPath = dirname(__DIR__) . '/logs';
+    if (!is_dir($defaultPath)) {
+        @mkdir($defaultPath, 0755, true);
+    }
+    return $defaultPath;
+}
+
 // Función para obtener métricas de requests HTTP desde archivo de log
 function obtenerMetricasHTTP() {
-    $logFile = __DIR__ . '/logs/metrics.log';
+    $logsDir = obtenerDirectorioLogs();
+    $logFile = $logsDir . '/metrics.log';
     $metricas = [];
     
     if (!file_exists($logFile)) {
@@ -197,7 +221,8 @@ function obtenerMetricasHTTP() {
 
 // Función para obtener métricas de tiempo de respuesta
 function obtenerMetricasTiempoRespuesta() {
-    $responseTimeFile = __DIR__ . '/logs/response_time.log';
+    $logsDir = obtenerDirectorioLogs();
+    $responseTimeFile = $logsDir . '/response_time.log';
     $metricas = [];
     
     if (!file_exists($responseTimeFile)) {
