@@ -9,9 +9,10 @@ MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
 MYSQL_HOST=${MYSQL_HOST:-mysql}
 MYSQL_PORT=${MYSQL_PORT:-3306}
 
-# Create .my.cnf file in /etc directory (standard location)
-mkdir -p /etc
-cat > /etc/.my.cnf <<EOF
+# Create .my.cnf file in /tmp directory (writable location)
+# /etc requires root permissions, so we use /tmp instead
+MY_CNF_PATH="/tmp/.my.cnf"
+cat > "$MY_CNF_PATH" <<EOF
 [client]
 user=root
 password=${MYSQL_PASSWORD}
@@ -20,11 +21,11 @@ port=${MYSQL_PORT}
 EOF
 
 # Make sure the file has correct permissions
-chmod 600 /etc/.my.cnf
+chmod 600 "$MY_CNF_PATH"
 
 # Verify the file was created and has content
-if [ ! -f /etc/.my.cnf ]; then
-    echo "ERROR: Failed to create /etc/.my.cnf" >&2
+if [ ! -f "$MY_CNF_PATH" ]; then
+    echo "ERROR: Failed to create $MY_CNF_PATH" >&2
     exit 1
 fi
 
@@ -47,7 +48,7 @@ fi
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
     if [ -n "$MYSQL_CLIENT" ]; then
         # Try to connect to MySQL
-        if $MYSQL_CLIENT --defaults-file=/etc/.my.cnf -e "SELECT 1;" >/dev/null 2>&1; then
+        if $MYSQL_CLIENT --defaults-file="$MY_CNF_PATH" -e "SELECT 1;" >/dev/null 2>&1; then
             MYSQL_READY=1
             break
         fi
@@ -107,4 +108,4 @@ echo "Usando mysqld_exporter: $MYSQLD_EXPORTER"
 
 # Execute mysqld_exporter with --config.my-cnf flag pointing to our config file
 # Version 0.18.0+ requires this flag instead of DATA_SOURCE_NAME
-exec "$MYSQLD_EXPORTER" --config.my-cnf=/etc/.my.cnf "$@"
+exec "$MYSQLD_EXPORTER" --config.my-cnf="$MY_CNF_PATH" "$@"

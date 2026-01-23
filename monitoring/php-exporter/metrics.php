@@ -4,48 +4,36 @@
  * Expone métricas en formato Prometheus
  */
 
-// Path adjustment: when copied to /var/www/html/, use relative path
-// Try multiple paths to support both Docker and local development
-$configPaths = [
-    __DIR__ . '/config/database.php',  // Local development
-    __DIR__ . '/../config/database.php', // Docker container (from /var/www/html/)
-    dirname(__DIR__) . '/config/database.php' // Alternative Docker path
-];
-
-$pdo = null;
-foreach ($configPaths as $path) {
-    if (file_exists($path)) {
-        require_once $path;
-        break;
-    }
-}
-
-// If still no connection, try to create it directly
-if (!isset($pdo) || $pdo === null) {
-    // Fallback: create connection directly using environment variables
-    $host = getenv('DB_HOST') ?: 'localhost';
-    $db   = getenv('DB_NAME') ?: 'trabajo_final_php';
-    $user = getenv('DB_USER') ?: 'root';
-    $pass = getenv('DB_PASS') ?: '';
-    
-    try {
-        $pdo = new PDO(
-            "mysql:host=$host;dbname=$db;charset=utf8mb4",
-            $user,
-            $pass,
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false
-            ]
-        );
-    } catch (PDOException $e) {
-        error_log("Metrics: Failed to connect to database: " . $e->getMessage());
-        // Continue without database connection - metrics will show 0 values
-    }
-}
-
+// Set Content-Type header FIRST before any output or includes
 header('Content-Type: text/plain; version=0.0.4');
+
+// Disable error display to prevent HTML output
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
+// Create database connection directly using environment variables
+// We don't include database.php to avoid die() calls that output HTML
+$pdo = null;
+$host = getenv('DB_HOST') ?: 'localhost';
+$db   = getenv('DB_NAME') ?: 'trabajo_final_php';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASS') ?: '';
+
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$db;charset=utf8mb4",
+        $user,
+        $pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]
+    );
+} catch (PDOException $e) {
+    error_log("Metrics: Failed to connect to database: " . $e->getMessage());
+    // Continue without database connection - metrics will show 0 values
+}
 
 // Variable para almacenar estado de conexión a BD
 $dbConnectionHealthy = 0;
