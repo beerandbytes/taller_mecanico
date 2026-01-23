@@ -1,6 +1,11 @@
 # Guía de Instalación Rápida
 
-Esta guía es para instalación local sin Docker. Para instalación con Docker, consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md). Para instalación con XAMPP en Windows, consulta [GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md).
+Esta guía es para instalación local sin Docker. 
+
+**Opciones de instalación:**
+- **Con Docker (Recomendado):** Consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) para una instalación completa con monitorización
+- **Con XAMPP en Windows:** Consulta [GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md) para una guía paso a paso detallada
+- **Instalación manual:** Sigue esta guía para una instalación rápida
 
 ## Paso 1: Configurar Base de Datos
 
@@ -26,22 +31,35 @@ mysql -u root -p trabajo_final_php < database\database.sql
 "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p trabajo_final_php < database\database.sql
 ```
 
-**O usando phpMyAdmin (recomendado para Windows):**
+**O usando phpMyAdmin (recomendado para Windows con XAMPP/WAMP):**
 1. Abre phpMyAdmin en tu navegador (generalmente: http://localhost/phpmyadmin)
-2. Selecciona la base de datos `trabajo_final_php` (o créala primero)
+2. Selecciona la base de datos `trabajo_final_php` (o créala primero desde la pestaña "Bases de datos")
 3. Ve a la pestaña "Importar"
 4. Selecciona el archivo `database\database.sql`
-5. Haz clic en "Continuar"
+5. Haz clic en "Continuar" o "Go"
+6. Espera a que termine la importación
 
 ## Paso 2: Configurar Conexión
 
-Edita `config/database.php` y ajusta las credenciales:
+Edita `config/database.php` y ajusta las credenciales según tu configuración:
+
+**Para XAMPP (sin contraseña por defecto):**
 ```php
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'trabajo_final_php');
 define('DB_USER', 'root');
-define('DB_PASS', 'tu_contraseña');
+define('DB_PASS', '');  // Vacío para XAMPP por defecto
 ```
+
+**Para MySQL instalado manualmente:**
+```php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'trabajo_final_php');
+define('DB_USER', 'root');
+define('DB_PASS', 'tu_contraseña');  // Tu contraseña de MySQL
+```
+
+**Nota:** El archivo `config/database.php` también soporta variables de entorno (para Docker), pero en instalación local usa los valores por defecto mostrados arriba.
 
 ## Paso 3: Generar Hash de Contraseña del Admin
 
@@ -122,14 +140,41 @@ C:\wamp64\bin\php\php8.2.0\php.exe -S localhost:8000
 
 **Opción 2: Usar Apache/Nginx (recomendado para producción)**
 
-- **XAMPP (Windows):** Coloca el proyecto en `C:\xampp\htdocs\` y accede vía http://localhost/taller_mecanico
-- **WAMP (Windows):** Coloca el proyecto en `C:\wamp64\www\` y accede vía http://localhost/taller_mecanico
-- **Apache/Nginx (Linux/Mac):** Configura un virtual host apuntando al directorio del proyecto
+- **XAMPP (Windows):** 
+  - Coloca el proyecto en `C:\xampp\htdocs\taller_mecanico\`
+  - Accede vía http://localhost/taller_mecanico
+  - Ver [GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md) para guía detallada
+- **WAMP (Windows):** 
+  - Coloca el proyecto en `C:\wamp64\www\taller_mecanico\`
+  - Accede vía http://localhost/taller_mecanico
+- **Apache/Nginx (Linux/Mac):** 
+  - Configura un virtual host apuntando al directorio del proyecto
+  - O coloca el proyecto en `/var/www/html/taller_mecanico/` y accede vía http://localhost/taller_mecanico
 
-Visita: http://localhost:8000 (o la URL configurada según tu servidor)
+**URLs de acceso:**
+- Servidor integrado: http://localhost:8000
+- Apache/Nginx: http://localhost/taller_mecanico (ajusta según tu configuración)
 
 ## Credenciales por Defecto
 
-- Usuario: `admin`
-- Contraseña: `admin123` (si usas el hash del ejemplo, puede que necesites regenerarlo)
+Después de importar la base de datos, puedes iniciar sesión como administrador con:
+
+- **Usuario:** `admin`
+- **Contraseña:** `admin123`
+
+**IMPORTANTE:** 
+- Si la contraseña no funciona, puede que necesites regenerar el hash. Usa `generate_password_hash.php` para generar un nuevo hash.
+- Cambia estas credenciales inmediatamente después de la primera instalación por seguridad.
+
+## Verificación
+
+1. Accede a la aplicación en tu navegador
+2. Inicia sesión con las credenciales de administrador
+3. Verifica que puedas:
+   - Ver noticias
+   - Crear usuarios
+   - Administrar citas
+   - Crear noticias con imágenes
+
+Si todo funciona correctamente, ¡la instalación está completa!
 

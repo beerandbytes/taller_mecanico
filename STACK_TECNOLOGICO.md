@@ -266,73 +266,90 @@ El proyecto está construido con un stack LAMP (Linux, Apache, MySQL, PHP) moder
 
 #### Dashboards Incluidos
 
-1. **Dashboard de Sistema**
+Los dashboards se cargan automáticamente desde `monitoring/grafana/dashboards/`:
+
+1. **Dashboard de Sistema** (`sistema.json`)
    - Uso de CPU
    - Uso de memoria
    - Uso de disco
    - Tráfico de red
+   - Fuente: Node Exporter
 
-2. **Dashboard de Aplicación**
+2. **Dashboard de Aplicación** (`aplicacion.json`)
    - Requests HTTP por método
    - Requests HTTP por estado
    - Tiempo de respuesta
    - Sesiones activas
    - Total de requests
+   - Fuente: PHP Exporter (metrics.php)
 
-3. **Dashboard de Base de Datos**
+3. **Dashboard de Base de Datos** (`base-datos.json`)
    - Conexiones MySQL
    - Consultas por segundo
    - Operaciones de lectura/escritura
    - Tamaño de base de datos
    - Uptime MySQL
+   - Fuente: MySQL Exporter
 
-4. **Dashboard de Negocio**
+4. **Dashboard de Negocio** (`negocio.json`)
    - Total de usuarios
    - Usuarios por rol
    - Total de citas
    - Citas por estado
    - Total de noticias
    - Sesiones activas
+   - Fuente: PHP Exporter (metrics.php)
 
 **Archivos:**
-- `monitoring/grafana/provisioning/datasources/prometheus.yml` - Configuración de datasource
-- `monitoring/grafana/provisioning/dashboards/dashboard.yml` - Configuración de dashboards
-- `monitoring/grafana/dashboards/*.json` - Definiciones de dashboards
+- `monitoring/grafana/provisioning/datasources/prometheus.yml` - Configuración automática del datasource de Prometheus
+- `monitoring/grafana/provisioning/dashboards/dashboard.yml` - Configuración de carga automática de dashboards
+- `monitoring/grafana/dashboards/sistema.json` - Dashboard de métricas del sistema
+- `monitoring/grafana/dashboards/aplicacion.json` - Dashboard de métricas de la aplicación
+- `monitoring/grafana/dashboards/base-datos.json` - Dashboard de métricas de MySQL
+- `monitoring/grafana/dashboards/negocio.json` - Dashboard de métricas de negocio
 
 ## Seguridad
 
 ### Medidas de Seguridad Implementadas
 
 1. **Encriptación de Contraseñas**
-   - Algoritmo: bcrypt (a través de `password_hash()`)
-   - Cost: 10 (configurable)
+   - Algoritmo: bcrypt (a través de `password_hash()` con `PASSWORD_DEFAULT`)
+   - Cost: 10 (configurable automáticamente por PHP)
+   - Las contraseñas nunca se almacenan en texto plano
 
 2. **Protección SQL Injection**
    - Método: Prepared Statements con PDO
    - Validación: Todos los parámetros son escapados automáticamente
+   - `PDO::ATTR_EMULATE_PREPARES => false` para usar prepared statements nativos
 
 3. **Protección XSS (Cross-Site Scripting)**
    - Método: `htmlspecialchars()` en toda salida de datos
-   - Sanitización: `strip_tags()` en datos de entrada
+   - Sanitización: `strip_tags()` y `trim()` en datos de entrada
+   - Validación de entrada con `filter_var()` para emails
 
 4. **Validación de Sesiones**
    - Verificación de sesión activa en páginas protegidas
-   - Control de roles (admin/user)
+   - Control de roles (admin/user) con verificación en cada página
    - Timeout de sesión configurado en PHP
+   - Regeneración de ID de sesión en login
 
 5. **Validación de Archivos**
    - Verificación de tipo MIME
-   - Verificación de extensión
-   - Límite de tamaño
+   - Verificación de extensión (solo JPG, PNG)
+   - Límite de tamaño (5MB máximo)
+   - Procesamiento seguro con GD
 
 6. **Protección de Archivos Sensibles**
    - `.htaccess` bloquea acceso directo a:
      - `config/database.php`
      - `includes/functions.php`
+     - Archivos de configuración
 
 7. **Variables de Entorno**
-   - Credenciales de base de datos en variables de entorno
+   - Credenciales de base de datos en variables de entorno (Docker)
+   - Soporte para configuración tradicional (instalación local)
    - No hardcodeadas en el código
+   - Archivo `.env.example` como plantilla
 
 ## Dependencias del Sistema
 

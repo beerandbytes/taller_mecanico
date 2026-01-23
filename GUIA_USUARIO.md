@@ -369,20 +369,23 @@ El menú de navegación para administradores incluye:
 
 ### Acceso a Monitorización (Grafana)
 
-Los administradores pueden acceder al sistema de monitorización:
+Los administradores pueden acceder al sistema de monitorización cuando el proyecto está desplegado con Docker:
 
-1. Accede a Grafana: http://localhost:3000 (o el puerto configurado)
+1. Accede a Grafana: http://localhost:3000 (o el puerto configurado en `.env`)
 2. Inicia sesión con las credenciales configuradas en `.env`:
-   - Usuario: `admin` (por defecto)
-   - Contraseña: `admin123` (por defecto)
+   - Usuario: `admin` (por defecto, configurable con `GRAFANA_ADMIN_USER`)
+   - Contraseña: `admin123` (por defecto, configurable con `GRAFANA_ADMIN_PASSWORD`)
 
-3. Explora los dashboards disponibles:
-   - **Dashboard de Sistema:** Métricas de CPU, memoria, disco, red
-   - **Dashboard de Aplicación:** Requests HTTP, tiempos de respuesta, sesiones
-   - **Dashboard de Base de Datos:** Métricas de MySQL
-   - **Dashboard de Negocio:** Usuarios, citas, noticias
+3. Explora los dashboards disponibles (preconfigurados automáticamente):
+   - **Dashboard de Sistema:** Métricas de CPU, memoria, disco, red (Node Exporter)
+   - **Dashboard de Aplicación:** Requests HTTP, tiempos de respuesta, sesiones activas
+   - **Dashboard de Base de Datos:** Métricas de MySQL (conexiones, consultas, rendimiento)
+   - **Dashboard de Negocio:** Usuarios, citas, noticias, métricas de negocio
 
-**Nota:** Para más información sobre monitorización, consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+**Nota:** 
+- La monitorización solo está disponible cuando se despliega con Docker
+- Los dashboards se cargan automáticamente desde `monitoring/grafana/dashboards/`
+- Para más información sobre monitorización, consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)
 
 ## Características de Seguridad
 
@@ -484,12 +487,16 @@ Los administradores pueden acceder al sistema de monitorización:
 - Prometheus no está recopilando métricas
 - Datasource no está configurado correctamente
 - Los exportadores no están funcionando
+- El proyecto no está desplegado con Docker (la monitorización solo funciona con Docker)
 
 **Soluciones:**
-1. Verifica que Prometheus esté corriendo: `docker-compose ps prometheus`
-2. Accede a Prometheus: http://localhost:9090/targets y verifica que todos los targets estén "UP"
-3. En Grafana, ve a Configuration > Data Sources y verifica que Prometheus esté configurado
-4. Verifica los logs: `docker-compose logs prometheus`
+1. Verifica que estés usando Docker: `docker-compose ps`
+2. Verifica que Prometheus esté corriendo: `docker-compose ps prometheus`
+3. Accede a Prometheus: http://localhost:9090/targets y verifica que todos los targets estén "UP"
+   - Deberías ver: prometheus, php-app, node-exporter, mysqld-exporter
+4. En Grafana, el datasource de Prometheus se configura automáticamente desde `monitoring/grafana/provisioning/datasources/`
+5. Verifica los logs: `docker-compose logs prometheus`
+6. Verifica que los dashboards estén en `monitoring/grafana/dashboards/` (deberían cargarse automáticamente)
 
 ## Recursos Adicionales
 

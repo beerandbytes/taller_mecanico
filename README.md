@@ -1,6 +1,25 @@
-# Trabajo Final PHP/MySQL
+# Taller Mecánico - Sistema de Gestión Web
 
-Sitio web desarrollado con HTML5, CSS3, JavaScript, PHP y MySQL como trabajo final del módulo.
+Sistema web completo desarrollado con PHP y MySQL para la gestión de un taller mecánico. Incluye funcionalidades de gestión de usuarios, citas, noticias y un sistema completo de monitorización con Prometheus y Grafana.
+
+## 🚀 Características Principales
+
+- ✅ **Gestión de Usuarios:** Sistema de registro, login y perfiles con roles (admin/user)
+- ✅ **Gestión de Citas:** Los usuarios pueden crear, editar y eliminar sus citas
+- ✅ **Sistema de Noticias:** Los administradores pueden publicar noticias con imágenes
+- ✅ **Panel de Administración:** CRUD completo para usuarios, citas y noticias
+- ✅ **Monitorización:** Sistema completo con Prometheus y Grafana (solo con Docker)
+- ✅ **Seguridad:** Protección contra SQL Injection, XSS, validación de sesiones
+- ✅ **Responsive:** Diseño adaptable a dispositivos móviles y tablets
+
+## 🛠️ Tecnologías Utilizadas
+
+- **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+- **Backend:** PHP 8.2
+- **Base de Datos:** MySQL 8.0
+- **Servidor Web:** Apache 2.4
+- **Contenedores:** Docker & Docker Compose
+- **Monitorización:** Prometheus, Grafana, Node Exporter, MySQL Exporter
 
 ## Estructura del Proyecto
 
@@ -81,9 +100,9 @@ taller_mecanico/
   - Ver [GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md) para guía paso a paso
 - **Alternativa:** WAMP Server o instalación manual de PHP y MySQL
 
-## Instalación
+## 📦 Instalación
 
-### Opción 1: Instalación con Docker (Recomendado)
+### Opción 1: Instalación con Docker (Recomendado) 🐳
 
 Para una instalación rápida y completa con monitorización incluida, consulta la [Guía de Despliegue con Docker](DOCKER_DEPLOYMENT.md).
 
@@ -91,34 +110,66 @@ Para una instalación rápida y completa con monitorización incluida, consulta 
 
 **En Linux/Mac:**
 ```bash
+# Clonar o descargar el proyecto
+git clone <url-del-repositorio>
+cd taller_mecanico
+
+# Configurar variables de entorno
 cp .env.example .env
+
+# Iniciar todos los servicios
 docker-compose up -d
+
+# Verificar que todo está funcionando
+docker-compose ps
 ```
 
 **En Windows (PowerShell):**
 ```powershell
+# Clonar o descargar el proyecto
+git clone <url-del-repositorio>
+cd taller_mecanico
+
+# Configurar variables de entorno
 Copy-Item .env.example .env
+
+# Iniciar todos los servicios
 docker-compose up -d
+
+# Verificar que todo está funcionando
+docker-compose ps
 ```
 
 **En Windows (CMD):**
 ```cmd
+REM Clonar o descargar el proyecto
+git clone <url-del-repositorio>
+cd taller_mecanico
+
+REM Configurar variables de entorno
 copy .env.example .env
+
+REM Iniciar todos los servicios
 docker-compose up -d
+
+REM Verificar que todo está funcionando
+docker-compose ps
 ```
 
-Accede a:
-- **Aplicación:** http://localhost:8080
-- **Grafana (Monitorización):** http://localhost:3000
-- **Prometheus:** http://localhost:9090
+**Acceso a los servicios:**
+- 🌐 **Aplicación Web:** http://localhost:8080
+- 📊 **Grafana (Monitorización):** http://localhost:3000 (usuario: `admin`, contraseña: `admin123`)
+- 📈 **Prometheus:** http://localhost:9090
 
-**Nota para Windows:** Asegúrate de que Docker Desktop esté ejecutándose antes de ejecutar los comandos.
+**Nota para Windows:** Asegúrate de que Docker Desktop esté ejecutándose antes de ejecutar los comandos. La primera vez puede tardar varios minutos en descargar las imágenes.
 
-### Opción 2: Instalación Local sin Docker
+### Opción 2: Instalación Local sin Docker 💻
 
-> **Para usuarios de Windows con XAMPP:** Consulta la [Guía de Despliegue Local con XAMPP](GUIA_DESPLIEGUE_LOCAL.md) para instrucciones paso a paso específicas de Windows.
+> **💡 Para usuarios de Windows con XAMPP:** Consulta la [Guía de Despliegue Local con XAMPP](GUIA_DESPLIEGUE_LOCAL.md) para instrucciones paso a paso específicas de Windows.
 
-### 1. Configurar Base de Datos
+> **📖 Para una guía rápida:** Consulta [INSTALL.md](INSTALL.md) para instrucciones de instalación rápida.
+
+#### 1. Configurar Base de Datos
 
 1. Crea una base de datos MySQL:
 ```sql
@@ -144,18 +195,29 @@ mysql -u root -p trabajo_final_php < database\database.sql
 - Selecciona el archivo `database\database.sql`
 - Haz clic en "Continuar"
 
-### 2. Configurar Conexión a Base de Datos
+#### 2. Configurar Conexión a Base de Datos
 
 Edita el archivo `config/database.php` y ajusta los valores según tu configuración:
 
+**Para XAMPP (sin contraseña por defecto):**
 ```php
-define('DB_HOST', 'localhost');  // Host de MySQL
-define('DB_NAME', 'trabajo_final_php');  // Nombre de la base de datos
-define('DB_USER', 'root');  // Usuario de MySQL
-define('DB_PASS', '');  // Contraseña de MySQL
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'trabajo_final_php');
+define('DB_USER', 'root');
+define('DB_PASS', '');  // Vacío para XAMPP por defecto
 ```
 
-### 3. Configurar Permisos de Carpetas
+**Para MySQL instalado manualmente:**
+```php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'trabajo_final_php');
+define('DB_USER', 'root');
+define('DB_PASS', 'tu_contraseña');  // Tu contraseña de MySQL
+```
+
+**Nota:** El archivo también soporta variables de entorno para Docker, pero en instalación local usa los valores por defecto mostrados arriba.
+
+#### 3. Configurar Permisos de Carpetas
 
 Asegúrate de que la carpeta `assets/images/` tenga permisos de escritura para que se puedan subir imágenes:
 
@@ -171,7 +233,7 @@ chmod 755 assets/images/
 4. Asegúrate de que "Usuarios" tenga permisos de "Control total" o al menos "Modificar"
 5. Si usas XAMPP, Apache necesita permisos de escritura en esta carpeta
 
-### 4. Iniciar el Servidor
+#### 4. Iniciar el Servidor
 
 #### Opción 1: Servidor integrado de PHP
 
@@ -204,140 +266,308 @@ C:\xampp\php\php.exe -S localhost:8000
 - Inicia los servicios desde WAMP
 - Accede vía: http://localhost/taller_mecanico
 
-## Credenciales por Defecto
+## 🔐 Credenciales por Defecto
 
 Después de importar la base de datos, puedes iniciar sesión como administrador con:
 
 - **Usuario:** `admin`
 - **Contraseña:** `admin123`
 
-**IMPORTANTE:** Cambia estas credenciales después de la primera instalación por seguridad.
+**⚠️ IMPORTANTE:** 
+- Cambia estas credenciales inmediatamente después de la primera instalación por seguridad
+- Si la contraseña no funciona, puede que necesites regenerar el hash usando `generate_password_hash.php`
 
-## Funcionalidades
+## ✨ Funcionalidades
 
-### Para Visitantes (sin sesión)
-- Ver página de inicio
-- Ver noticias
+### 👤 Para Visitantes (sin sesión)
+- Ver página de inicio con información del taller
+- Ver noticias publicadas
 - Registrarse como nuevo usuario
-- Iniciar sesión
+- Iniciar sesión con credenciales existentes
 
-### Para Usuarios Registrados (rol: user)
-- Ver página de inicio
-- Ver noticias
-- Gestionar citas (crear, editar, eliminar)
-- Ver y editar perfil personal
-- Cambiar contraseña
+### 👥 Para Usuarios Registrados (rol: user)
+- Todas las funcionalidades de visitante
+- **Gestión de Citas:**
+  - Crear nuevas citas
+  - Editar citas futuras
+  - Eliminar citas futuras
+  - Ver historial de citas
+- **Gestión de Perfil:**
+  - Ver y editar datos personales
+  - Cambiar contraseña
+  - Actualizar información de contacto
 
-### Para Administradores (rol: admin)
+### 🔧 Para Administradores (rol: admin)
 - Todas las funcionalidades de usuario
-- Administrar usuarios (crear, editar, eliminar)
-- Administrar citas de cualquier usuario
-- Administrar noticias (crear, editar, eliminar con imágenes)
+- **Administración de Usuarios:**
+  - Crear nuevos usuarios
+  - Editar usuarios existentes
+  - Eliminar usuarios
+  - Cambiar roles (admin/user)
+- **Administración de Citas:**
+  - Ver todas las citas del sistema
+  - Crear citas para cualquier usuario
+  - Editar cualquier cita
+  - Eliminar cualquier cita
+- **Administración de Noticias:**
+  - Crear noticias con imágenes
+  - Editar noticias existentes
+  - Eliminar noticias
+  - Subir imágenes (JPG, PNG, máximo 5MB)
+- **Monitorización (solo con Docker):**
+  - Acceso a Grafana para visualizar métricas
+  - Dashboards de sistema, aplicación, base de datos y negocio
 
-## Estructura de Base de Datos
+## 🗄️ Estructura de Base de Datos
 
-### Tabla: users_data
+El sistema utiliza 4 tablas principales con relaciones mediante Foreign Keys:
+
+### Tabla: `users_data`
 Almacena la información personal de los usuarios:
-- idUser (PK, AUTO_INCREMENT)
-- nombre (NOT NULL)
-- apellidos (NOT NULL)
-- email (UNIQUE, NOT NULL)
-- telefono (NOT NULL)
-- fecha_de_nacimiento (DATE, NOT NULL)
-- direccion (TEXT)
-- sexo (ENUM: 'Masculino', 'Femenino', 'Otro', NOT NULL)
+- `idUser` (PK, AUTO_INCREMENT) - Identificador único
+- `nombre` (VARCHAR, NOT NULL) - Nombre del usuario
+- `apellidos` (VARCHAR, NOT NULL) - Apellidos del usuario
+- `email` (VARCHAR, UNIQUE, NOT NULL) - Email único
+- `telefono` (VARCHAR, NOT NULL) - Teléfono de contacto
+- `fecha_de_nacimiento` (DATE, NOT NULL) - Fecha de nacimiento
+- `direccion` (TEXT) - Dirección (opcional)
+- `sexo` (ENUM: 'Masculino', 'Femenino', 'Otro', NOT NULL) - Sexo
 
-### Tabla: users_login
-Almacena la información de inicio de sesión:
-- idLogin (PK, AUTO_INCREMENT)
-- idUser (FK a users_data, UNIQUE, NOT NULL)
-- usuario (UNIQUE, NOT NULL)
-- password (VARCHAR(255), NOT NULL) - Encriptada con password_hash()
-- rol (ENUM: 'admin', 'user', NOT NULL)
+### Tabla: `users_login`
+Almacena las credenciales de acceso:
+- `idLogin` (PK, AUTO_INCREMENT) - Identificador único
+- `idUser` (FK a users_data, UNIQUE, NOT NULL) - Relación con users_data
+- `usuario` (VARCHAR, UNIQUE, NOT NULL) - Nombre de usuario único
+- `password` (VARCHAR(255), NOT NULL) - Hash bcrypt de la contraseña
+- `rol` (ENUM: 'admin', 'user', NOT NULL) - Rol del usuario
 
-### Tabla: citas
+**Relación:** Un usuario tiene una única cuenta de login (relación 1:1)
+
+### Tabla: `citas`
 Almacena las citas de los usuarios:
-- idCita (PK, AUTO_INCREMENT)
-- idUser (FK a users_data, NOT NULL)
-- fecha_cita (DATE, NOT NULL)
-- motivo_cita (TEXT)
+- `idCita` (PK, AUTO_INCREMENT) - Identificador único
+- `idUser` (FK a users_data, NOT NULL) - Usuario propietario de la cita
+- `fecha_cita` (DATE, NOT NULL) - Fecha de la cita
+- `motivo_cita` (TEXT) - Motivo o descripción de la cita
 
-### Tabla: noticias
-Almacena las noticias creadas por administradores:
-- idNoticia (PK, AUTO_INCREMENT)
-- titulo (UNIQUE, NOT NULL)
-- imagen (VARCHAR(255), NOT NULL) - Ruta al archivo
-- texto (TEXT, NOT NULL)
-- fecha (DATE, NOT NULL)
-- idUser (FK a users_data, NOT NULL)
+**Relación:** Un usuario puede tener múltiples citas (relación 1:N)
 
-## Características de Seguridad
+### Tabla: `noticias`
+Almacena las noticias publicadas por administradores:
+- `idNoticia` (PK, AUTO_INCREMENT) - Identificador único
+- `titulo` (VARCHAR, UNIQUE, NOT NULL) - Título único de la noticia
+- `imagen` (VARCHAR(255), NOT NULL) - Ruta al archivo de imagen
+- `texto` (TEXT, NOT NULL) - Contenido de la noticia
+- `fecha` (DATE, NOT NULL) - Fecha de publicación
+- `idUser` (FK a users_data, NOT NULL) - Administrador que creó la noticia
 
-- Contraseñas encriptadas con `password_hash()` de PHP
-- Protección contra SQL Injection mediante Prepared Statements
-- Protección contra XSS mediante `htmlspecialchars()`
-- Validación de sesiones y roles
-- Validación de archivos subidos (tipo y tamaño)
-- Sanitización de datos de entrada
+**Relación:** Un administrador puede crear múltiples noticias (relación 1:N)
 
-## Notas de Desarrollo
+**Características:**
+- Charset: `utf8mb4` para soporte completo de Unicode
+- Collation: `utf8mb4_unicode_ci`
+- Foreign Keys con `ON DELETE CASCADE` para mantener integridad referencial
 
-- El proyecto utiliza PDO para todas las consultas SQL
-- Las sesiones se gestionan mediante PHP sessions
-- Los formularios se validan tanto en cliente (HTML5) como en servidor (PHP)
-- El diseño es responsive y se adapta a dispositivos móviles
+## 🔒 Características de Seguridad
 
-## Monitorización
+El proyecto implementa múltiples capas de seguridad:
 
-El proyecto incluye un sistema completo de monitorización con Prometheus y Grafana:
+### Encriptación y Autenticación
+- ✅ Contraseñas encriptadas con `password_hash()` usando bcrypt
+- ✅ Verificación de contraseñas con `password_verify()`
+- ✅ Regeneración de ID de sesión en login
 
-- **Prometheus:** Recopila métricas del sistema, aplicación y base de datos
-- **Grafana:** Visualiza métricas en dashboards interactivos
-- **Métricas disponibles:**
-  - Sistema: CPU, memoria, disco, red
-  - Aplicación: Requests HTTP, tiempos de respuesta, sesiones activas
-  - Base de datos: Consultas, conexiones, rendimiento MySQL
-  - Negocio: Usuarios, citas, noticias
+### Protección contra Ataques
+- ✅ **SQL Injection:** Todas las consultas usan Prepared Statements con PDO
+- ✅ **XSS (Cross-Site Scripting):** Sanitización con `htmlspecialchars()` en toda salida
+- ✅ **CSRF:** Validación de sesiones en todas las operaciones críticas
 
-Para más información sobre monitorización, consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+### Validación y Sanitización
+- ✅ Validación de entrada en cliente (HTML5) y servidor (PHP)
+- ✅ Sanitización de datos con `strip_tags()` y `trim()`
+- ✅ Validación de emails con `filter_var()`
+- ✅ Validación de archivos subidos:
+  - Tipo MIME verificado
+  - Solo JPG y PNG permitidos
+  - Límite de tamaño: 5MB máximo
 
-## Documentación Adicional
+### Control de Acceso
+- ✅ Validación de sesiones en páginas protegidas
+- ✅ Control de roles (admin/user) con verificación en cada página
+- ✅ Protección de archivos sensibles mediante `.htaccess`
+- ✅ Timeout de sesión configurado
 
-- **[GUIA_USUARIO.md](GUIA_USUARIO.md)** - Guía completa de uso para todos los tipos de usuarios
-- **[STACK_TECNOLOGICO.md](STACK_TECNOLOGICO.md)** - Detalles técnicos del stack tecnológico
-- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guía de despliegue con Docker y monitorización (incluye instrucciones para Windows)
-- **[GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md)** - Guía paso a paso para desplegar con XAMPP en Windows
-- **[INSTALL.md](INSTALL.md)** - Guía de instalación rápida (incluye comandos para Windows)
+### Configuración Segura
+- ✅ Variables de entorno para credenciales (Docker)
+- ✅ No hardcodeo de contraseñas en el código
+- ✅ Archivo `.env.example` como plantilla segura
 
-## Solución de Problemas
+## 💻 Notas de Desarrollo
+
+### Arquitectura
+- **Backend:** PHP 8.2 con PDO para acceso a base de datos
+- **Frontend:** HTML5 semántico, CSS3 con Flexbox, JavaScript vanilla
+- **Base de Datos:** MySQL 8.0 con InnoDB y Foreign Keys
+- **Patrón:** Arquitectura MVC simplificada con separación de lógica
+
+### Características Técnicas
+- ✅ PDO con Prepared Statements para todas las consultas SQL
+- ✅ Gestión de sesiones con PHP sessions
+- ✅ Validación dual: cliente (HTML5) y servidor (PHP)
+- ✅ Diseño responsive con media queries
+- ✅ Soporte para variables de entorno (Docker) y configuración tradicional
+- ✅ Sistema de logs para métricas y errores
+
+### Estructura de Código
+- `config/` - Configuración de base de datos
+- `includes/` - Componentes reutilizables (header, footer, functions)
+- `assets/` - Recursos estáticos (CSS, imágenes)
+- `admin/` - Páginas de administración
+- `monitoring/` - Configuración de monitorización (Docker)
+
+## 📊 Monitorización
+
+El proyecto incluye un sistema completo de monitorización con Prometheus y Grafana (disponible solo con Docker):
+
+### Componentes de Monitorización
+
+**Prometheus** - Motor de métricas
+- Puerto: 9090 (configurable en `.env`)
+- Retención de datos: 15 días
+- Intervalo de scraping: 15 segundos
+- Targets configurados:
+  - Prometheus mismo
+  - Aplicación PHP (metrics.php)
+  - Node Exporter (métricas del sistema)
+  - MySQL Exporter (métricas de base de datos)
+
+**Grafana** - Visualización de métricas
+- Puerto: 3000 (configurable en `.env`)
+- Credenciales por defecto: `admin` / `admin123`
+- Datasource configurado automáticamente
+- Dashboards preconfigurados:
+  - 📈 **Sistema** (`sistema.json`) - CPU, memoria, disco, red
+  - 🌐 **Aplicación** (`aplicacion.json`) - Requests HTTP, tiempos de respuesta, sesiones
+  - 🗄️ **Base de Datos** (`base-datos.json`) - Consultas, conexiones, rendimiento MySQL
+  - 💼 **Negocio** (`negocio.json`) - Usuarios, citas, noticias, métricas de negocio
+
+### Métricas Disponibles
+
+- **Sistema (Node Exporter):** CPU, memoria, disco, red, procesos
+- **Aplicación (PHP Exporter):** Requests HTTP por método/estado, tiempos de respuesta, sesiones activas
+- **Base de Datos (MySQL Exporter):** Conexiones, consultas por segundo, operaciones de lectura/escritura, tamaño de BD
+- **Negocio (PHP Exporter):** Total de usuarios, usuarios por rol, total de citas, total de noticias
+
+**⚠️ Nota:** La monitorización solo está disponible cuando se despliega con Docker. Para más información, consulta [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+
+## 📚 Documentación Adicional
+
+- 📖 **[GUIA_USUARIO.md](GUIA_USUARIO.md)** - Guía completa de uso para todos los tipos de usuarios (visitantes, usuarios registrados y administradores)
+- 🔧 **[STACK_TECNOLOGICO.md](STACK_TECNOLOGICO.md)** - Detalles técnicos del stack tecnológico utilizado
+- 🐳 **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guía completa de despliegue con Docker y monitorización (incluye instrucciones para Windows, Linux y Mac)
+- 💻 **[GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md)** - Guía paso a paso para desplegar con XAMPP en Windows
+- ⚡ **[INSTALL.md](INSTALL.md)** - Guía de instalación rápida sin Docker (incluye comandos para Windows, Linux y Mac)
+
+## 🔧 Solución de Problemas
 
 ### Error de conexión a la base de datos
-- Verifica que MySQL esté ejecutándose
-- Comprueba las credenciales en `config/database.php` o `.env` (si usas Docker)
-- Asegúrate de que la base de datos existe
-- Si usas Docker: `docker-compose logs mysql`
+
+**Síntomas:** Mensaje "Error de conexión a la base de datos" al acceder a la aplicación
+
+**Soluciones:**
+1. Verifica que MySQL esté ejecutándose
+   - **XAMPP:** Panel de Control → MySQL debe estar en "Running"
+   - **Docker:** `docker-compose ps mysql`
+2. Comprueba las credenciales:
+   - **Local:** Revisa `config/database.php`
+   - **Docker:** Revisa `.env` (variables `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`)
+3. Verifica que la base de datos existe:
+   - **phpMyAdmin:** http://localhost/phpmyadmin
+   - **Docker:** `docker-compose exec mysql mysql -u root -p -e "SHOW DATABASES;"`
+4. Revisa los logs:
+   - **Docker:** `docker-compose logs mysql`
 
 ### Error al subir imágenes
-- Verifica los permisos de la carpeta `assets/images/`
-  - **Windows:** Asegúrate de que la carpeta tenga permisos de escritura (ver sección de permisos arriba)
-  - **Linux/Mac:** Ejecuta `chmod 755 assets/images/`
-- Comprueba que la extensión GD esté habilitada en PHP
-  - **Windows con XAMPP:** Edita `C:\xampp\php\php.ini` y descomenta `;extension=gd` (quita el `;`)
-- Verifica el tamaño máximo de archivo permitido (php.ini: upload_max_filesize)
-- Si usas Docker: `docker-compose exec web chmod -R 755 /var/www/html/assets/images`
+
+**Síntomas:** No se pueden subir imágenes al crear/editar noticias
+
+**Soluciones:**
+1. **Permisos de carpeta:**
+   - **Windows:** Propiedades → Seguridad → Otorgar "Control total" a "Usuarios"
+   - **Linux/Mac:** `chmod 755 assets/images/`
+   - **Docker:** `docker-compose exec web chmod -R 755 /var/www/html/assets/images`
+2. **Extensión GD de PHP:**
+   - **XAMPP:** Edita `C:\xampp\php\php.ini` → Busca `;extension=gd` → Quita el `;`
+   - **Docker:** Ya está incluida en la imagen
+3. **Límite de tamaño:**
+   - Verifica `upload_max_filesize` y `post_max_size` en `php.ini`
+   - Máximo permitido: 5MB
+4. **Formato de archivo:**
+   - Solo se permiten JPG y PNG
+   - Verifica que el archivo no esté corrupto
 
 ### Error de sesión
-- Asegúrate de que las sesiones estén habilitadas en PHP
-- Verifica los permisos de la carpeta de sesiones temporales
+
+**Síntomas:** Sesiones que no se mantienen, redirecciones constantes al login
+
+**Soluciones:**
+1. Verifica que las sesiones estén habilitadas en PHP
+2. Revisa los permisos de la carpeta de sesiones temporales
+3. Verifica que las cookies estén habilitadas en el navegador
+4. Limpia las cookies del sitio y vuelve a iniciar sesión
 
 ### Problemas con Docker
-Consulta la sección "Solución de Problemas" en [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) para problemas específicos de Docker.
 
-## Autor
+**Síntomas:** Contenedores que no inician, puertos ocupados, errores de conexión
+
+**Soluciones comunes:**
+- **Puertos ocupados:** Cambia los puertos en `.env` o detén los servicios que los usan
+- **Contenedores no inician:** Revisa `docker-compose logs` para ver errores
+- **Docker Desktop no inicia (Windows):** Verifica que WSL 2 esté instalado y habilitado
+
+📖 **Para más ayuda:** Consulta la sección "Solución de Problemas" en [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) para problemas específicos de Docker.
+
+## 🎯 Estado del Proyecto
+
+✅ **Completado** - El proyecto está funcional y listo para uso
+
+### Funcionalidades Implementadas
+- ✅ Sistema de autenticación y autorización
+- ✅ CRUD completo de usuarios, citas y noticias
+- ✅ Gestión de perfiles de usuario
+- ✅ Sistema de noticias con imágenes
+- ✅ Panel de administración completo
+- ✅ Sistema de monitorización (Docker)
+- ✅ Diseño responsive
+- ✅ Validación y seguridad implementadas
+
+### Posibles Mejoras Futuras
+- 🔄 Sistema de notificaciones por email
+- 📅 Calendario de citas mejorado
+- 📱 Aplicación móvil
+- 🔍 Sistema de búsqueda avanzada
+- 📊 Reportes y estadísticas adicionales
+
+## 👤 Autor
 
 Desarrollado como trabajo final del módulo PHP/MySQL.
 
-## Licencia
+## 📄 Licencia
 
 Este proyecto es de uso educativo.
+
+---
+
+## 🙏 Contribuciones
+
+Las contribuciones son bienvenidas. Si encuentras algún problema o tienes sugerencias, por favor:
+1. Abre un issue describiendo el problema o sugerencia
+2. Si quieres contribuir código, crea un pull request con una descripción clara de los cambios
+
+## 📞 Soporte
+
+Para obtener ayuda:
+1. Revisa la documentación en las guías mencionadas arriba
+2. Consulta la sección de "Solución de Problemas"
+3. Revisa los logs de la aplicación y servicios
 

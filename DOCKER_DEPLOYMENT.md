@@ -43,9 +43,10 @@ git clone <url-del-repositorio>
 cd taller_mecanico
 ```
 
-O si descargas el proyecto como ZIP:
+**O si descargas el proyecto como ZIP:**
 1. Extrae el archivo ZIP en una carpeta (por ejemplo: `C:\proyectos\taller_mecanico`)
 2. Abre PowerShell o CMD en esa carpeta
+3. Navega a la carpeta del proyecto: `cd C:\proyectos\taller_mecanico`
 
 ### 2. Configurar Variables de Entorno
 
@@ -157,16 +158,23 @@ docker ps
 - **Puerto:** 3000 (configurable)
 - **Imagen:** `grafana/grafana:latest`
 - **Dashboards:** Se cargan automáticamente desde `monitoring/grafana/dashboards/`
+- **Dashboards incluidos:**
+  - `sistema.json` - Métricas del sistema (CPU, memoria, disco, red)
+  - `aplicacion.json` - Métricas de la aplicación (requests, tiempos de respuesta)
+  - `base-datos.json` - Métricas de MySQL
+  - `negocio.json` - Métricas de negocio (usuarios, citas, noticias)
 
 ### 5. Node Exporter (Métricas del Sistema)
 - **Puerto:** 9100
 - **Imagen:** `prom/node-exporter:latest`
 - Expone métricas de CPU, memoria, disco y red
+- **Nota:** En Windows, las métricas del sistema pueden tener limitaciones. Para producción en Linux, descomenta los volúmenes en `docker-compose.yml`
 
 ### 6. MySQL Exporter (Métricas de Base de Datos)
 - **Puerto:** 9104
 - **Imagen:** `prom/mysqld-exporter:latest`
 - Expone métricas de rendimiento de MySQL
+- **Configuración:** Usa un script de entrypoint personalizado para compatibilidad con Windows (`monitoring/mysqld_exporter/entrypoint.sh`)
 
 ## Comandos Útiles
 
@@ -668,9 +676,10 @@ ss -tuln
    ```
 
 2. Verifica que Prometheus esté configurado como datasource:
+   - El datasource se configura automáticamente desde `monitoring/grafana/provisioning/datasources/prometheus.yml`
    - Accede a Grafana: http://localhost:3000
    - Ve a Configuration > Data Sources
-   - Verifica que Prometheus esté configurado
+   - Deberías ver "Prometheus" configurado automáticamente
 
 3. Verifica que los dashboards estén en el directorio correcto:
    
@@ -678,6 +687,7 @@ ss -tuln
    ```bash
    ls -la monitoring/grafana/dashboards/
    ```
+   Deberías ver: `sistema.json`, `aplicacion.json`, `base-datos.json`, `negocio.json`
    
    **En Windows (PowerShell):**
    ```powershell
@@ -688,6 +698,14 @@ ss -tuln
    ```cmd
    dir monitoring\grafana\dashboards\
    ```
+
+4. Verifica la configuración de provisioning:
+   - El archivo `monitoring/grafana/provisioning/dashboards/dashboard.yml` debería estar configurado
+   - Los dashboards se cargan automáticamente al iniciar Grafana
+
+5. Si los dashboards no aparecen:
+   - Reinicia Grafana: `docker-compose restart grafana`
+   - Verifica los logs: `docker-compose logs grafana`
 
 ### Problemas de Permisos
 
