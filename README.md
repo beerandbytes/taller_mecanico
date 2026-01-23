@@ -164,6 +164,8 @@ docker-compose ps
   - **Usuario:** `admin`
   - **Contraseña:** `admin123`
 - 📈 **Prometheus:** http://localhost:9090
+- 📊 **Endpoint de Métricas PHP:** http://localhost:8080/metrics.php
+- 🗄️ **MySQL (desde host):** localhost:3306
 
 **Nota para Windows:** Asegúrate de que Docker Desktop esté ejecutándose antes de ejecutar los comandos. La primera vez puede tardar varios minutos en descargar las imágenes.
 
@@ -270,16 +272,100 @@ C:\xampp\php\php.exe -S localhost:8000
 - Inicia los servicios desde WAMP
 - Accede vía: http://localhost/taller_mecanico
 
-## 🔐 Credenciales por Defecto
+## 🔐 Credenciales y Accesos del Sistema
 
-Después de importar la base de datos, puedes iniciar sesión como administrador con:
+### Credenciales de la Aplicación Web
 
+**Administrador por defecto:**
+- **URL:** http://localhost:8080 (Docker) o http://localhost/taller_mecanico (XAMPP)
 - **Usuario:** `admin`
 - **Contraseña:** `admin123`
 
 **⚠️ IMPORTANTE:** 
 - Cambia estas credenciales inmediatamente después de la primera instalación por seguridad
 - Si la contraseña no funciona, puede que necesites regenerar el hash usando `generate_password_hash.php`
+
+### Credenciales de Base de Datos
+
+#### Con Docker (configurado en `.env`):
+- **Host:** `mysql` (desde contenedores) o `localhost` (desde host)
+- **Puerto:** `3306` (configurable con `MYSQL_PORT` en `.env`)
+- **Base de datos:** `trabajo_final_php` (configurable con `MYSQL_DATABASE` en `.env`)
+- **Usuario root:** `root`
+- **Contraseña root:** `rootpassword` (configurable con `MYSQL_ROOT_PASSWORD` en `.env`)
+- **Usuario aplicación:** `app_user` (configurable con `MYSQL_USER` en `.env`)
+- **Contraseña aplicación:** `app_password` (configurable con `MYSQL_PASSWORD` en `.env`)
+
+#### Con XAMPP (instalación local):
+- **Host:** `localhost`
+- **Puerto:** `3306`
+- **Base de datos:** `trabajo_final_php`
+- **Usuario:** `root`
+- **Contraseña:** `` (vacía por defecto en XAMPP)
+
+**Acceso a phpMyAdmin (solo con XAMPP):**
+- **URL:** http://localhost/phpmyadmin
+- **Usuario:** `root`
+- **Contraseña:** `` (vacía por defecto)
+
+### Credenciales de Grafana (Solo con Docker)
+
+**Acceso a Grafana:**
+- **URL:** http://localhost:3000 (configurable con `GRAFANA_PORT` en `.env`)
+- **Usuario:** `admin` (configurable con `GRAFANA_ADMIN_USER` en `.env`)
+- **Contraseña:** `admin123` (configurable con `GRAFANA_ADMIN_PASSWORD` en `.env`)
+
+**⚠️ IMPORTANTE:** 
+- Cambia estas credenciales en producción
+- Las credenciales se configuran en el archivo `.env`
+- Para aplicar cambios, reinicia Grafana: `docker-compose restart grafana`
+
+### Acceso a Prometheus (Solo con Docker)
+
+**Acceso a Prometheus:**
+- **URL:** http://localhost:9090 (configurable con `PROMETHEUS_PORT` en `.env`)
+- **Sin autenticación:** Prometheus no tiene autenticación por defecto (configurar en producción)
+
+### Configuración de Variables de Entorno (.env)
+
+El archivo `.env` contiene todas las credenciales y configuraciones. Ejemplo completo:
+
+```env
+# Configuración de Base de Datos
+DB_HOST=mysql
+DB_NAME=trabajo_final_php
+DB_USER=root
+DB_PASS=rootpassword
+
+# Configuración de la Aplicación
+APP_ENV=production
+APP_DEBUG=false
+
+# Configuración de MySQL
+MYSQL_ROOT_PASSWORD=rootpassword
+MYSQL_DATABASE=trabajo_final_php
+MYSQL_USER=app_user
+MYSQL_PASSWORD=app_password
+
+# Configuración de Prometheus
+PROMETHEUS_RETENTION=15d
+PROMETHEUS_SCRAPE_INTERVAL=15s
+
+# Configuración de Grafana
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin123
+
+# Puertos
+WEB_PORT=8080
+MYSQL_PORT=3306
+PROMETHEUS_PORT=9090
+GRAFANA_PORT=3000
+```
+
+**⚠️ IMPORTANTE:** 
+- Nunca subas el archivo `.env` al repositorio (está en `.gitignore`)
+- Usa `.env.example` como plantilla
+- Cambia todas las contraseñas por defecto en producción
 
 ## ✨ Funcionalidades
 
@@ -448,17 +534,25 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
   - MySQL Exporter (métricas de base de datos)
 
 **Grafana** - Visualización de métricas
-- Puerto: 3000 (configurable en `.env`)
+- Puerto: 3000 (configurable en `.env` con `GRAFANA_PORT`)
+- **URL de acceso:** http://localhost:3000
 - **Credenciales de acceso:**
   - **Usuario:** `admin` (configurable en `.env` con `GRAFANA_ADMIN_USER`)
   - **Contraseña:** `admin123` (configurable en `.env` con `GRAFANA_ADMIN_PASSWORD`)
-- URL de acceso: http://localhost:3000
-- Datasource configurado automáticamente
-- Dashboards preconfigurados:
+- Datasource configurado automáticamente (Prometheus)
+- Dashboards preconfigurados (se cargan automáticamente):
   - 📈 **Sistema** (`sistema.json`) - CPU, memoria, disco, red
   - 🌐 **Aplicación** (`aplicacion.json`) - Requests HTTP, tiempos de respuesta, sesiones
   - 🗄️ **Base de Datos** (`base-datos.json`) - Consultas, conexiones, rendimiento MySQL
   - 💼 **Negocio** (`negocio.json`) - Usuarios, citas, noticias, métricas de negocio
+
+**Node Exporter** - Métricas del sistema
+- Puerto: 9100
+- URL de acceso: http://localhost:9100/metrics
+
+**MySQL Exporter** - Métricas de MySQL
+- Puerto: 9104
+- URL de acceso: http://localhost:9104/metrics
 
 ### Métricas Disponibles
 
@@ -480,6 +574,31 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 - 🐳 **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guía completa de despliegue con Docker y monitorización (incluye instrucciones para Windows, Linux y Mac)
 - 💻 **[GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md)** - Guía paso a paso para desplegar con XAMPP en Windows
 - ⚡ **[INSTALL.md](INSTALL.md)** - Guía de instalación rápida sin Docker (incluye comandos para Windows, Linux y Mac)
+- 📊 **[MONITORING.md](MONITORING.md)** - Guía completa del sistema de monitoreo con Prometheus y Grafana
+
+## 🔗 URLs y Puertos de Acceso
+
+### Con Docker
+
+| Servicio | URL | Puerto | Credenciales |
+|----------|-----|--------|--------------|
+| **Aplicación Web** | http://localhost:8080 | 8080 | admin / admin123 |
+| **Grafana** | http://localhost:3000 | 3000 | admin / admin123 |
+| **Prometheus** | http://localhost:9090 | 9090 | Sin autenticación |
+| **MySQL** | localhost:3306 | 3306 | root / rootpassword |
+| **Node Exporter** | http://localhost:9100/metrics | 9100 | Sin autenticación |
+| **MySQL Exporter** | http://localhost:9104/metrics | 9104 | Sin autenticación |
+| **Métricas PHP** | http://localhost:8080/metrics.php | - | Sin autenticación |
+
+### Con XAMPP (Instalación Local)
+
+| Servicio | URL | Puerto | Credenciales |
+|----------|-----|--------|--------------|
+| **Aplicación Web** | http://localhost/taller_mecanico | 80 | admin / admin123 |
+| **phpMyAdmin** | http://localhost/phpmyadmin | 80 | root / (vacía) |
+| **MySQL** | localhost:3306 | 3306 | root / (vacía) |
+
+**Nota:** Los puertos pueden configurarse en el archivo `.env` para Docker o en la configuración de XAMPP para instalación local.
 
 ## 🔧 Solución de Problemas
 
@@ -492,8 +611,9 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
    - **XAMPP:** Panel de Control → MySQL debe estar en "Running"
    - **Docker:** `docker-compose ps mysql`
 2. Comprueba las credenciales:
-   - **Local:** Revisa `config/database.php`
+   - **Local:** Revisa `config/database.php` (usuario: `root`, contraseña: vacía por defecto en XAMPP)
    - **Docker:** Revisa `.env` (variables `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`)
+     - Por defecto: `DB_USER=root`, `DB_PASS=rootpassword`
 3. Verifica que la base de datos existe:
    - **phpMyAdmin:** http://localhost/phpmyadmin
    - **Docker:** `docker-compose exec mysql mysql -u root -p -e "SHOW DATABASES;"`
@@ -534,9 +654,10 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 **Síntomas:** Contenedores que no inician, puertos ocupados, errores de conexión
 
 **Soluciones comunes:**
-- **Puertos ocupados:** Cambia los puertos en `.env` o detén los servicios que los usan
+- **Puertos ocupados:** Cambia los puertos en `.env` (por ejemplo, `WEB_PORT=8081`) o detén los servicios que los usan
 - **Contenedores no inician:** Revisa `docker-compose logs` para ver errores
 - **Docker Desktop no inicia (Windows):** Verifica que WSL 2 esté instalado y habilitado
+- **Credenciales incorrectas:** Verifica el archivo `.env` y las variables de entorno configuradas
 
 📖 **Para más ayuda:** Consulta la sección "Solución de Problemas" en [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) para problemas específicos de Docker.
 
@@ -583,4 +704,77 @@ Para obtener ayuda:
 1. Revisa la documentación en las guías mencionadas arriba
 2. Consulta la sección de "Solución de Problemas"
 3. Revisa los logs de la aplicación y servicios
+
+---
+
+## 📋 Resumen Rápido de Credenciales
+
+### 🔐 Credenciales Principales
+
+#### Aplicación Web (Admin)
+- **URL:** http://localhost:8080 (Docker) o http://localhost/taller_mecanico (XAMPP)
+- **Usuario:** `admin`
+- **Contraseña:** `admin123`
+
+#### Base de Datos MySQL
+
+**Con Docker:**
+- **Host:** `mysql` (desde contenedores) o `localhost:3306` (desde host)
+- **Usuario root:** `root`
+- **Contraseña root:** `rootpassword`
+- **Base de datos:** `trabajo_final_php`
+
+**Con XAMPP:**
+- **Host:** `localhost:3306`
+- **Usuario:** `root`
+- **Contraseña:** `` (vacía por defecto)
+- **Base de datos:** `trabajo_final_php`
+
+#### Grafana (Solo con Docker)
+- **URL:** http://localhost:3000
+- **Usuario:** `admin`
+- **Contraseña:** `admin123`
+
+#### Prometheus (Solo con Docker)
+- **URL:** http://localhost:9090
+- **Sin autenticación** (configurar en producción)
+
+#### phpMyAdmin (Solo con XAMPP)
+- **URL:** http://localhost/phpmyadmin
+- **Usuario:** `root`
+- **Contraseña:** `` (vacía por defecto)
+
+### ⚙️ Configuración de Puertos (Docker)
+
+Todos los puertos se configuran en el archivo `.env`:
+
+| Variable | Puerto por Defecto | Descripción |
+|----------|---------------------|-------------|
+| `WEB_PORT` | 8080 | Puerto de la aplicación web |
+| `MYSQL_PORT` | 3306 | Puerto de MySQL |
+| `PROMETHEUS_PORT` | 9090 | Puerto de Prometheus |
+| `GRAFANA_PORT` | 3000 | Puerto de Grafana |
+
+### 🔄 Cambiar Credenciales
+
+**Para cambiar credenciales de la aplicación:**
+1. Inicia sesión como administrador
+2. Ve a "Perfil" → "Cambiar Contraseña"
+3. O edita directamente en la base de datos
+
+**Para cambiar credenciales de Grafana (Docker):**
+1. Edita el archivo `.env`
+2. Cambia `GRAFANA_ADMIN_USER` y `GRAFANA_ADMIN_PASSWORD`
+3. Reinicia Grafana: `docker-compose restart grafana`
+
+**Para cambiar credenciales de MySQL (Docker):**
+1. Edita el archivo `.env`
+2. Cambia `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`
+3. Actualiza `DB_PASS` en `.env` para que coincida
+4. Reinicia los contenedores: `docker-compose down && docker-compose up -d`
+
+**⚠️ IMPORTANTE:** 
+- Todas las credenciales por defecto son solo para desarrollo
+- **NUNCA uses estas credenciales en producción**
+- Cambia todas las contraseñas antes de desplegar en producción
 
