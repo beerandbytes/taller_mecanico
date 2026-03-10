@@ -96,7 +96,10 @@ function fetchMotorNews($limit = 9) {
     if (!is_dir($cacheDir)) {
         mkdir($cacheDir, 0755, true);
     }
-    file_put_contents($cacheFile, json_encode($articles));
+    if (file_put_contents($cacheFile, json_encode($articles)) === false) {
+        // Log error but don't fail - caching is optional
+        error_log("Failed to write cache file: " . $cacheFile);
+    }
     
     return $articles;
 }

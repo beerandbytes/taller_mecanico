@@ -8,13 +8,15 @@ services:
     ports:
       - "${WEB_PORT:-8080}:80"
     volumes:
+      - ./:/var/www/html
       - ./assets/images:/var/www/html/assets/images
       - ./logs:/var/www/html/logs
     environment:
-      - DB_HOST=${DB_HOST:-mysql}
+      - DB_HOST=mysql
+      - DB_PORT=3306
       - DB_NAME=${DB_NAME:-trabajo_final_php}
-      - DB_USER=${DB_USER:-root}
-      - DB_PASS=${DB_PASS:-rootpassword}
+      - DB_USER=${MYSQL_USER:-app_user}
+      - DB_PASS=${MYSQL_PASSWORD:-app_password}
     depends_on:
       mysql:
         condition: service_healthy

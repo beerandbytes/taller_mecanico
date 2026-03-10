@@ -1,12 +1,17 @@
 <?php
 // noticias-administracion.php
-require_once '../config/db.php';
-require_once '../includes/header.php';
-require_once '../includes/news_importer.php'; // Add importer
+require_once '../config/database.php';
+require_once '../includes/functions.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isAdmin()) {
     redirect('../index.php');
 }
+
+require_once '../includes/header.php';
+require_once '../includes/news_importer.php'; // Add importer
 
 $errors = [];
 $success = '';

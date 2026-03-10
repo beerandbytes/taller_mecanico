@@ -92,7 +92,7 @@ require_once 'includes/header.php';
         // Fetch latest 3 tips
         // Ensure $pdo is available. If included via header it might not be, so checking/requiring just in case.
         if (!isset($pdo)) {
-            require_once 'config/db.php';
+            require_once 'config/database.php';
         }
         
         $consejos = getLatestTips($pdo, 3);

@@ -1,0 +1,85 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'monitoring@tallermecanico.com'
+  smtp_auth_username: 'monitoring@tallermecanico.com'
+  smtp_auth_password: 'your-email-password'
+  smtp_require_tls: true
+
+# Configuración de enrutamiento de alertas
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'web.hook'
+  routes:
+  - match:
+      severity: critical
+    receiver: 'critical-alerts'
+    group_wait: 10s
+    repeat_interval: 5m
+  - match:
+      severity: warning
+    receiver: 'warning-alerts'
+    group_wait: 2m
+    repeat_interval: 1h
+
+# Receptores de notificaciones
+receivers:
+- name: 'web.hook'
+  webhook_configs:
+  - url: 'http://127.0.0.1:5001/'
+
+- name: 'critical-alerts'
+  email_configs:
+  - to: 'admin@tallermecanico.com'
+    subject: '[CRITICAL] {{ .GroupLabels.alertname }} - Taller Mecánico'
+    body: |
+      Alerta Crítica Detectada
+      
+      Resumen: {{ .GroupLabels.alertname }}
+      Servicio: {{ .GroupLabels.service }}
+      Componente: {{ .GroupLabels.component }}
+      
+      Detalles:
+      {{ range .Alerts }}
+      - {{ .Annotations.summary }}
+        Descripción: {{ .Annotations.description }}
+        Instancia: {{ .Labels.instance }}
+        Valor: {{ .Value }}
+      {{ end }}
+      
+      Por favor, revise el dashboard de Grafana: http://localhost:3000
+      
+      Este es un mensaje automático del sistema de monitoreo.
+
+- name: 'warning-alerts'
+  email_configs:
+  - to: 'admin@tallermecanico.com'
+    subject: '[WARNING] {{ .GroupLabels.alertname }} - Taller Mecánico'
+    body: |
+      Alerta de Advertencia
+      
+      Resumen: {{ .GroupLabels.alertname }}
+      Servicio: {{ .GroupLabels.service }}
+      Componente: {{ .GroupLabels.component }}
+      
+      Detalles:
+      {{ range .Alerts }}
+      - {{ .Annotations.summary }}
+        Descripción: {{ .Annotations.description }}
+        Instancia: {{ .Labels.instance }}
+        Valor: {{ .Value }}
+      {{ end }}
+      
+      Por favor, revise el dashboard de Grafana: http://localhost:3000
+      
+      Este es un mensaje automático del sistema de monitoreo.
+
+# Inhibición de alertas (evitar spam)
+inhibit_rules:
+- source_match:
+    severity: 'critical'
+  target_match:
+    severity: 'warning'
+  equal: ['alertname', 'cluster', 'service']

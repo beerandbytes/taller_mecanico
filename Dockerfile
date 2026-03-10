@@ -20,17 +20,17 @@ RUN a2enmod rewrite
 # Configurar Apache para permitir .htaccess
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
+# Expose environment variables to Apache/PHP
+RUN echo "PassEnv DB_HOST DB_NAME DB_USER DB_PASS" >> /etc/apache2/conf-enabled/expose-env.conf
+
 # Copiar código de la aplicación
 COPY . /var/www/html/
 
-# Crear directorio de logs
-RUN mkdir -p /var/www/html/logs \
-    && chown -R www-data:www-data /var/www/html/logs \
-    && chmod -R 755 /var/www/html/logs
-
-# Configurar permisos para assets/images
-RUN chown -R www-data:www-data /var/www/html/assets/images \
-    && chmod -R 755 /var/www/html/assets/images
+# Crear directorios necesarios y configurar permisos
+RUN mkdir -p /var/www/html/logs /var/www/html/cache /var/www/html/assets/images \
+    && touch /var/www/html/import_log.txt \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html
 
 # Copiar endpoint de métricas
 COPY monitoring/php-exporter/metrics.php /var/www/html/metrics.php

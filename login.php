@@ -1,6 +1,7 @@
 <?php
 // login.php
-require_once 'config/db.php';
+session_start();
+require_once 'config/database.php';
 require_once 'includes/header.php';
 
 if (isLoggedIn()) {

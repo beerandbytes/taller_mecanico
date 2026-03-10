@@ -8,9 +8,21 @@ chmod -R 755 /var/www/html/logs
 
 # Configuración de variables de entorno con valores por defecto
 DB_HOST="${DB_HOST:-mysql}"
+DB_PORT="${DB_PORT:-}"
 DB_USER="${DB_USER:-root}"
 DB_PASS="${DB_PASS:-rootpassword}"
 DB_NAME="${DB_NAME:-trabajo_final_php}"
+
+# Soportar DB_HOST con formato host:puerto (común en .env local)
+DB_HOSTNAME="$DB_HOST"
+DB_HOSTPORT="$DB_PORT"
+if [[ "$DB_HOST" == *:* ]]; then
+  DB_HOSTNAME="${DB_HOST%%:*}"
+  DB_HOSTPORT="${DB_HOST##*:}"
+fi
+if [[ -z "$DB_HOSTPORT" ]]; then
+  DB_HOSTPORT="3306"
+fi
 
 # Crear archivo temporal .my.cnf para evitar exponer contraseña en procesos
 TMP_CNF=$(mktemp)
@@ -18,12 +30,19 @@ trap "rm -f $TMP_CNF" EXIT
 
 cat > "$TMP_CNF" <<EOF
 [client]
-host=${DB_HOST}
+host=${DB_HOSTNAME}
+port=${DB_HOSTPORT}
 user=${DB_USER}
 password=${DB_PASS}
 ssl=0
 EOF
 chmod 600 "$TMP_CNF"
+
+mysqladmin_ping() {
+  mysqladmin --defaults-extra-file="$TMP_CNF" --protocol=tcp --connect-timeout=2 ping >/dev/null 2>&1 && return 0
+  # Fallback por compatibilidad (algunas builds no soportan ciertas flags)
+  mysqladmin --defaults-extra-file="$TMP_CNF" ping >/dev/null 2>&1
+}
 
 # Esperar a que MySQL esté listo con timeout
 echo "Esperando a que MySQL esté listo..."
@@ -32,7 +51,7 @@ ATTEMPT=0
 MYSQL_READY=0
 
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-    if mysqladmin ping -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASS}" --skip-ssl --silent 2>/dev/null; then
+    if mysqladmin_ping; then
         MYSQL_READY=1
         break
     fi
@@ -50,7 +69,7 @@ echo "MySQL está listo!"
 
 # Verificar que la base de datos existe
 echo "Verificando que la base de datos '${DB_NAME}' existe..."
-if ! mysql -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASS}" --skip-ssl -e "USE ${DB_NAME};" 2>/dev/null; then
+if ! mysql --defaults-extra-file="$TMP_CNF" --protocol=tcp -e "USE ${DB_NAME};" 2>/dev/null; then
     echo "ADVERTENCIA: La base de datos '${DB_NAME}' no existe aún. Puede que se esté inicializando..." >&2
     echo "La aplicación intentará conectarse cuando la base de datos esté disponible."
 else

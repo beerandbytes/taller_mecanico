@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS noticias (
     imagen VARCHAR(255) NOT NULL,
     texto TEXT NOT NULL,
     fecha DATE NOT NULL,
+    enlace VARCHAR(255),
     idUser INT NOT NULL,
     FOREIGN KEY (idUser) REFERENCES users_data(idUser) ON DELETE CASCADE
 );
@@ -87,6 +88,18 @@ CREATE INDEX idx_users_data_apellidos ON users_data(apellidos);
 -- Indexes for users_login table (usuario already has UNIQUE index)
 CREATE INDEX idx_users_login_rol ON users_login(rol);
 
--- Optional: Insert a default admin user for testing
--- Note: Password hash logic will need to be manual or handled via script if we want a pre-made admin.
--- For now, we will leave it empty and assume the user creates it or we provide a script later.
+-- Default admin user (for local/dev installs)
+-- Usuario: admin
+-- Contraseña: admin123
+-- Nota: si ya existe, estos INSERT no hacen nada (INSERT IGNORE).
+SET @admin_email = 'admin@local.test';
+SET @admin_username = 'admin';
+SET @admin_password_hash = '$2y$12$CrCgC52lwU1YznK5XIWIwOqpuVmH0/EVUWYoq6DLV8cYbVF6Uw/HC';
+
+INSERT IGNORE INTO users_data (nombre, apellidos, email, telefono, fecha_de_nacimiento, direccion, calle, codigo_postal, ciudad, provincia, sexo)
+VALUES ('Admin', 'Local', @admin_email, '000000000', '1990-01-01', NULL, NULL, NULL, NULL, NULL, 'Otro');
+
+SET @admin_id_user = (SELECT idUser FROM users_data WHERE email = @admin_email LIMIT 1);
+
+INSERT IGNORE INTO users_login (idUser, usuario, password, rol)
+VALUES (@admin_id_user, @admin_username, @admin_password_hash, 'admin');

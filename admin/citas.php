@@ -1,11 +1,16 @@
 <?php
 // citas-administracion.php
-require_once '../config/db.php';
-require_once '../includes/header.php';
+require_once '../config/database.php';
+require_once '../includes/functions.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isAdmin()) {
     redirect('../index.php');
 }
+
+require_once '../includes/header.php';
 
 $errors = [];
 $success = '';
@@ -46,7 +51,7 @@ $sql = "
            u.nombre as user_nombre, u.apellidos as user_apellidos, u.email as user_email, u.telefono as user_phone
     FROM citas c
     LEFT JOIN users_data u ON c.idUser = u.idUser
-    ORDER BY c.fecha_cita DESC, c.hora_cita ASC
+    ORDER BY c.fecha_cita DESC
 ";
 $citas = $pdo->query($sql)->fetchAll();
 ?>

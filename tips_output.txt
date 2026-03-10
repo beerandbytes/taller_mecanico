@@ -1,0 +1,33 @@
+Array
+(
+    [0] => Array
+        (
+            [idConsejo] => 2
+            [titulo] => Comprueba la presión de tus neumáticos
+            [imagen] => https://images.unsplash.com/photo-1544133782-01966a9bc971?auto=format&fit=crop&q=80&w=800
+            [texto] => <p>Mantener la presión adecuada mejora la seguridad y reduce el consumo.</p>
+            [fecha] => 2026-03-09
+            [idUser] => 1
+        )
+
+    [1] => Array
+        (
+            [idConsejo] => 3
+            [titulo] => Cambio de aceite periódico
+            [imagen] => https://images.unsplash.com/photo-1486006396880-602930493081?auto=format&fit=crop&q=80&w=800
+            [texto] => <p>El aceite limpio protege el motor y alarga su vida útil.</p>
+            [fecha] => 2026-03-09
+            [idUser] => 1
+        )
+
+    [2] => Array
+        (
+            [idConsejo] => 4
+            [titulo] => Revisión de frenos
+            [imagen] => https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&q=80&w=800
+            [texto] => <p>No esperes a oír ruidos extraños para revisar tus pastillas de freno.</p>
+            [fecha] => 2026-03-09
+            [idUser] => 1
+        )
+
+)

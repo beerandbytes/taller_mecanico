@@ -1,11 +1,16 @@
 <?php
 // includes/news_importer.php
 
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/rss_parser.php';
 
 function logImport($msg) {
-    file_put_contents(__DIR__ . '/../import_log.txt', date('Y-m-d H:i:s') . " - " . $msg . "\n", FILE_APPEND);
+    $logPath = __DIR__ . '/../import_log.txt';
+    $logDir = dirname($logPath);
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0755, true);
+    }
+    file_put_contents($logPath, date('Y-m-d H:i:s') . " - " . $msg . "\n", FILE_APPEND);
 }
 
 function importMotorNews($pdo, $limit = 20) {

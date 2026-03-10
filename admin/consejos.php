@@ -1,25 +1,37 @@
 <?php
 // consejos-administracion.php
-require_once '../config/db.php';
-require_once '../includes/header.php';
+require_once '../config/database.php';
+require_once '../includes/functions.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!isAdmin()) {
     redirect('../index.php');
 }
 
+require_once '../includes/header.php';
+
 $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'];
+    $action = $_POST['action'] ?? '';
     $titulo = sanitize($_POST['titulo'] ?? '');
-    // Allow HTML for tips content as it's admin-only and we might want rich text
     $texto = trim($_POST['texto'] ?? ''); 
     $imagen = sanitize($_POST['imagen'] ?? '');
     $fecha = $_POST['fecha'] ?? date('Y-m-d');
     $idConsejo = $_POST['idConsejo'] ?? null;
 
-    if ($action === 'create') {
+    if ($action === 'seed_councils') {
+        try {
+            $sql = file_get_contents(__DIR__ . '/../database/seed_consejos.sql');
+            $pdo->exec($sql);
+            $success = "Consejos predeterminados cargados.";
+        } catch (PDOException $e) {
+            $errors[] = "Error al sembrar: " . $e->getMessage();
+        }
+    } elseif ($action === 'create') {
         try {
             $stmt = $pdo->prepare("INSERT INTO consejos (titulo, imagen, texto, fecha, idUser) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$titulo, $imagen, $texto, $fecha, $_SESSION['user_id']]);
@@ -33,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$titulo, $imagen, $texto, $fecha, $idConsejo]);
             $success = "Consejo actualizado.";
         } catch (PDOException $e) {
-            $errors[] = "Error al actualizar.";
+            $errors[] = "Error al actualizar: " . $e->getMessage();
         }
     } elseif ($action === 'delete') {
         try {
@@ -41,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$idConsejo]);
             $success = "Consejo eliminado.";
         } catch (PDOException $e) {
-            $errors[] = "Error al eliminar.";
+            $errors[] = "Error al eliminar: " . $e->getMessage();
         }
     }
 }
@@ -51,11 +63,30 @@ $consejos = $pdo->query("SELECT * FROM consejos ORDER BY fecha DESC")->fetchAll(
 
 <h1 class="mb-4 text-center"><i class="bi bi-tools me-2"></i>Administrar Consejos</h1>
 
+<!-- System Status Diagnostics -->
+<?php
+$dbStatus = isset($pdo) ? '<span class="badge bg-success">DB Conectada</span>' : '<span class="badge bg-danger">DB Error</span>';
+$adminUserCheck = $pdo->query("SELECT COUNT(*) FROM users_login WHERE rol='admin'")->fetchColumn();
+$adminStatus = $adminUserCheck > 0 ? '<span class="badge bg-success">Admin OK</span>' : '<span class="badge bg-danger">Sin Admin</span>';
+?>
+<div class="text-center mb-4">
+    <small class="text-muted">Estado del Sistema: <?= $dbStatus ?> | <?= $adminStatus ?></small>
+</div>
+
 <?php if ($success): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <?= $success ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+<?php endif; ?>
+
+<?php if (!empty($errors)): ?>
+    <?php foreach ($errors as $error): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?= $error ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <?php endforeach; ?>
 <?php endif; ?>
 
 <div class="row">
@@ -99,8 +130,14 @@ $consejos = $pdo->query("SELECT * FROM consejos ORDER BY fecha DESC")->fetchAll(
     <!-- Tips List -->
     <div class="col-lg-8">
         <div class="card shadow-sm">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Lista de Consejos</h5>
+                <form action="consejos.php" method="POST" onsubmit="return confirm('¿Cargar consejos recomendados por defecto?');">
+                    <input type="hidden" name="action" value="seed_councils">
+                    <button type="submit" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-magic me-1"></i> Cargar Predeterminados
+                    </button>
+                </form>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">

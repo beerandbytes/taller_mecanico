@@ -2,7 +2,7 @@
 // populate_motor_news.php
 // Script to populate database with real motor news from motor.es RSS feed
 
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/news_importer.php';
 require_once __DIR__ . '/../includes/functions.php';
 
