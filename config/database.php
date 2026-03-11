@@ -2,6 +2,87 @@
 // config/database.php - Unified Database Configuration
 // Supports environment variables, Docker, and local development
 
+function isRunningInContainer(): bool {
+    if (file_exists('/.dockerenv')) {
+        return true;
+    }
+    $cgroup = '/proc/1/cgroup';
+    if (file_exists($cgroup)) {
+        $contents = @file_get_contents($cgroup);
+        if ($contents !== false && preg_match('/docker|containerd|kubepods/i', $contents)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function envStr(string $key): ?string {
+    $value = getenv($key);
+    if ($value === false) return null;
+    $value = trim((string)$value);
+    return $value === '' ? null : $value;
+}
+
+function applyDbEnvAliases(): void {
+    // Coolify / common managed DB envs often use MYSQL_* (or MARIADB_*)
+    $aliases = [
+        'DB_HOST' => ['MYSQL_HOST', 'MARIADB_HOST'],
+        'DB_PORT' => ['MYSQL_PORT', 'MARIADB_PORT'],
+        'DB_NAME' => ['MYSQL_DATABASE', 'MARIADB_DATABASE'],
+        'DB_USER' => ['MYSQL_USER', 'MARIADB_USER'],
+        'DB_PASS' => ['MYSQL_PASSWORD', 'MARIADB_PASSWORD'],
+    ];
+
+    foreach ($aliases as $target => $sources) {
+        if (envStr($target) !== null) continue;
+        foreach ($sources as $src) {
+            $v = envStr($src);
+            if ($v !== null) {
+                putenv("$target=$v");
+                $_ENV[$target] = $v;
+                $_SERVER[$target] = $v;
+                break;
+            }
+        }
+    }
+
+    // Optional: DATABASE_URL=mysql://user:pass@host:3306/dbname
+    if (envStr('DB_HOST') === null && envStr('DATABASE_URL') !== null) {
+        $url = envStr('DATABASE_URL');
+        $parts = @parse_url($url);
+        if (is_array($parts) && (($parts['scheme'] ?? '') === 'mysql' || ($parts['scheme'] ?? '') === 'mariadb')) {
+            if (!empty($parts['host'])) {
+                putenv('DB_HOST=' . $parts['host']);
+                $_ENV['DB_HOST'] = $parts['host'];
+                $_SERVER['DB_HOST'] = $parts['host'];
+            }
+            if (!empty($parts['port'])) {
+                putenv('DB_PORT=' . $parts['port']);
+                $_ENV['DB_PORT'] = (string)$parts['port'];
+                $_SERVER['DB_PORT'] = (string)$parts['port'];
+            }
+            if (!empty($parts['user'])) {
+                putenv('DB_USER=' . $parts['user']);
+                $_ENV['DB_USER'] = $parts['user'];
+                $_SERVER['DB_USER'] = $parts['user'];
+            }
+            if (array_key_exists('pass', $parts) && $parts['pass'] !== null) {
+                putenv('DB_PASS=' . $parts['pass']);
+                $_ENV['DB_PASS'] = (string)$parts['pass'];
+                $_SERVER['DB_PASS'] = (string)$parts['pass'];
+            }
+            if (!empty($parts['path'])) {
+                $db = ltrim((string)$parts['path'], '/');
+                if ($db !== '') {
+                    putenv('DB_NAME=' . $db);
+                    $_ENV['DB_NAME'] = $db;
+                    $_SERVER['DB_NAME'] = $db;
+                }
+            }
+        }
+    }
+}
+
 // Load environment variables if .env exists
 if (file_exists(__DIR__ . '/../.env')) {
     $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -25,34 +106,38 @@ if (file_exists(__DIR__ . '/../.env')) {
     }
 }
 
-// Determine environment and set defaults
-$is_production = false;
-if (isset($_SERVER['HTTP_HOST'])) {
-    if (strpos($_SERVER['HTTP_HOST'], 'infinityfree') !== false || 
-        strpos($_SERVER['HTTP_HOST'], 'tallermecanico') !== false) {
-        $is_production = true;
-    }
+// Normalize DB envs from common aliases (Coolify/managed DBs)
+applyDbEnvAliases();
+
+$deployTarget = strtolower(envStr('DEPLOY_TARGET') ?? '');
+$appEnv = strtolower(envStr('APP_ENV') ?? '');
+$runningInContainer = isRunningInContainer();
+
+$isInfinityfree = false;
+if ($deployTarget === 'infinityfree') {
+    $isInfinityfree = true;
+} elseif ($deployTarget === '' && isset($_SERVER['HTTP_HOST']) && stripos((string)$_SERVER['HTTP_HOST'], 'infinityfree') !== false) {
+    $isInfinityfree = true;
 }
 
 // Database configuration with proper fallbacks
-if ($is_production) {
-    // Production settings
-    $host = getenv('DB_HOST') ?: 'sql208.infinityfree.com';
-    $db   = getenv('DB_NAME') ?: 'if0_40685841_trabajo_final_php';
-    $user = getenv('DB_USER') ?: 'if0_40685841';
-    $pass = getenv('DB_PASS') ?: '';
+if ($isInfinityfree) {
+    $host = envStr('DB_HOST') ?? 'sql208.infinityfree.com';
+    $db   = envStr('DB_NAME') ?? 'if0_40685841_trabajo_final_php';
+    $user = envStr('DB_USER') ?? 'if0_40685841';
+    $pass = envStr('DB_PASS') ?? '';
 } else {
-    // Local development settings
-    $host = getenv('DB_HOST') ?: 'localhost';
-    $db   = getenv('DB_NAME') ?: 'trabajo_final_php';
-    $user = getenv('DB_USER') ?: 'root';
-    $pass = getenv('DB_PASS') ?: '';
+    // Prefer Docker service name inside containers; localhost for local dev
+    $host = envStr('DB_HOST') ?? ($runningInContainer ? 'mysql' : 'localhost');
+    $db   = envStr('DB_NAME') ?? 'trabajo_final_php';
+    $user = envStr('DB_USER') ?? 'root';
+    $pass = envStr('DB_PASS') ?? ($runningInContainer ? 'rootpassword' : '');
 }
 
 $charset = 'utf8mb4';
 
 // Support host:port (common in local .env) and/or DB_PORT
-$port = getenv('DB_PORT') ?: '';
+$port = envStr('DB_PORT') ?? '';
 if (strpos($host, ':') !== false && strpos($host, ']') === false) {
     $parts = explode(':', $host);
     if (count($parts) >= 2) {
@@ -87,7 +172,8 @@ try {
     error_log("DSN: $dsn, User: $user");
     
     // Provide user-friendly error message
-    if ($is_production) {
+    $isProduction = ($appEnv === 'production');
+    if ($isProduction) {
         die("
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ffcccc; background-color: #fff0f0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
                 <h2 style='color: #cc0000; margin-top: 0;'>Error de Conexión</h2>

@@ -14,14 +14,32 @@ error_reporting(E_ALL);
 // Create database connection directly using environment variables
 // We don't include database.php to avoid die() calls that output HTML
 $pdo = null;
-$host = getenv('DB_HOST') ?: 'localhost';
-$db   = getenv('DB_NAME') ?: 'trabajo_final_php';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASS') ?: 'rootpassword';
+
+$runningInContainer = file_exists('/.dockerenv');
+
+// Coolify/managed DB env aliases
+$host = getenv('DB_HOST') ?: (getenv('MYSQL_HOST') ?: ($runningInContainer ? 'mysql' : 'localhost'));
+$port = getenv('DB_PORT') ?: (getenv('MYSQL_PORT') ?: '');
+$db   = getenv('DB_NAME') ?: (getenv('MYSQL_DATABASE') ?: 'trabajo_final_php');
+$user = getenv('DB_USER') ?: (getenv('MYSQL_USER') ?: 'root');
+$pass = getenv('DB_PASS') ?: (getenv('MYSQL_PASSWORD') ?: ($runningInContainer ? 'rootpassword' : ''));
+
+// Support host:port
+if (is_string($host) && strpos($host, ':') !== false && strpos($host, ']') === false) {
+    $parts = explode(':', $host);
+    if (count($parts) >= 2) {
+        $maybePort = end($parts);
+        if ($maybePort !== '' && ctype_digit((string)$maybePort)) {
+            if (empty($port)) $port = (string)$maybePort;
+            array_pop($parts);
+            $host = implode(':', $parts);
+        }
+    }
+}
 
 try {
     $pdo = new PDO(
-        "mysql:host=$host;dbname=$db;charset=utf8mb4",
+        "mysql:host=$host;" . (!empty($port) ? "port=$port;" : "") . "dbname=$db;charset=utf8mb4",
         $user,
         $pass,
         [

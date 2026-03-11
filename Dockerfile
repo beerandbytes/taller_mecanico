@@ -21,7 +21,7 @@ RUN a2enmod rewrite
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 # Expose environment variables to Apache/PHP
-RUN echo "PassEnv DB_HOST DB_NAME DB_USER DB_PASS" >> /etc/apache2/conf-enabled/expose-env.conf
+RUN echo "PassEnv DB_HOST DB_PORT DB_NAME DB_USER DB_PASS APP_ENV APP_DEBUG DEPLOY_TARGET MYSQL_HOST MYSQL_PORT MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD" >> /etc/apache2/conf-enabled/expose-env.conf
 
 # Copiar código de la aplicación
 COPY . /var/www/html/

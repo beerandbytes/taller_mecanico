@@ -6,12 +6,12 @@ mkdir -p /var/www/html/logs
 chown -R www-data:www-data /var/www/html/logs
 chmod -R 755 /var/www/html/logs
 
-# Configuración de variables de entorno con valores por defecto
-DB_HOST="${DB_HOST:-mysql}"
-DB_PORT="${DB_PORT:-}"
-DB_USER="${DB_USER:-root}"
-DB_PASS="${DB_PASS:-rootpassword}"
-DB_NAME="${DB_NAME:-trabajo_final_php}"
+# Normalizar variables de BD (Coolify/managed DBs suelen exponer MYSQL_*)
+DB_HOST="${DB_HOST:-${MYSQL_HOST:-mysql}}"
+DB_PORT="${DB_PORT:-${MYSQL_PORT:-}}"
+DB_USER="${DB_USER:-${MYSQL_USER:-root}}"
+DB_PASS="${DB_PASS:-${MYSQL_PASSWORD:-rootpassword}}"
+DB_NAME="${DB_NAME:-${MYSQL_DATABASE:-trabajo_final_php}}"
 
 # Soportar DB_HOST con formato host:puerto (común en .env local)
 DB_HOSTNAME="$DB_HOST"

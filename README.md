@@ -198,6 +198,10 @@ Este proyecto incluye un compose pensado para Dokploy: `docker-compose.dokploy.y
 Como base, usa `.env.example` y cambia credenciales para producción:
 
 - `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
+
+### Opción 3: Despliegue en Coolify 🧩
+
+Guía rápida: `docs/COOLIFY_DEPLOYMENT.md`.
 - `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`
 - `APP_ENV=production`, `APP_DEBUG=false`
 - (Opcional alertas) `ALERT_EMAIL_TO`, `SMTP_SMARTHOST`, `SMTP_FROM`, `SMTP_AUTH_USERNAME`, `SMTP_AUTH_PASSWORD`
