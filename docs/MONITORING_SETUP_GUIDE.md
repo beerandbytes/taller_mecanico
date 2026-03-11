@@ -51,11 +51,11 @@ docker-compose ps
 
 ### Paso 3: Verificar Métricas
 
-1. **Métricas de la Aplicación PHP**: http://localhost:8080/metrics.php
+1. **Métricas de la Aplicación PHP**: http://localhost:8081/metrics.php (o el valor de `WEB_PORT`)
 2. **Métricas del Sistema**: http://localhost:9100/metrics
 3. **Métricas de MySQL**: http://localhost:9104/metrics
 
-> Nota: si cambias `WEB_PORT` en `.env`, el endpoint será `http://localhost:<WEB_PORT>/metrics.php` (por defecto `8080`).
+> Nota: si cambias `WEB_PORT` en `.env`, el endpoint será `http://localhost:<WEB_PORT>/metrics.php` (por defecto `8081`).
 
 ## 📈 Dashboard Principal
 
@@ -126,7 +126,7 @@ docker-compose up -d alertmanager prometheus
 
 ### Enviar un email de prueba (desde Grafana)
 
-- Entra en Grafana → Dashboard principal → link `Test Email (Alertas)` (abre `http://localhost:8080/admin/test-alert-email.php`).
+- Entra en Grafana → Dashboard principal → link `Test Email (Alertas)` (abre `http://localhost:8081/admin/test-alert-email.php` o el valor de `WEB_PORT`).
 - Requiere iniciar sesión como admin en la aplicación.
 
 ### Alertas Críticas (Rojo)

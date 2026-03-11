@@ -4,7 +4,7 @@ Esta guía cubre el despliegue en Coolify con MySQL y los pasos “antes de darl
 
 El fallo más común en Coolify es que la app arranca sin `DB_*` y termina intentando conectar a `localhost` (dentro del contenedor), o que Coolify expone la BD como `MYSQL_*` en lugar de `DB_*`.
 
-Este repo ya soporta ambos: `DB_*` y alias `MYSQL_*`.
+Este repo ya soporta ambos: `DB_*` y alias `MYSQL_*` (y en `docker-compose.coolify.yml` la app usa `MYSQL_*` por defecto para que funcione también con DBs gestionadas por Coolify).
 
 ## Antes de empezar (recomendado)
 

@@ -341,7 +341,7 @@ Si puedes iniciar sesión correctamente y ver el panel de administración, ¡el 
    - Abre `C:\xampp\apache\conf\httpd.conf`
    - Busca `Listen 80` y cámbialo a `Listen 8080`
    - Guarda y reinicia Apache
-   - Accede al proyecto con: `http://localhost:8080/trabajo_final_php_masterd/`
+   - Accede al proyecto con: `http://localhost:8081/trabajo_final_php_masterd/` (o el valor de `WEB_PORT`)
 
 ### El puerto 3306 está ocupado (MySQL no inicia)
 

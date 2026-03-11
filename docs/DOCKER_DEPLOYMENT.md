@@ -87,7 +87,7 @@ GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin123
 
 # Puertos
-WEB_PORT=8080
+WEB_PORT=8081
 MYSQL_PORT=3306
 PROMETHEUS_PORT=9090
 GRAFANA_PORT=3000
@@ -128,7 +128,7 @@ docker ps
 
 ### 5. Acceder a la Aplicación
 
-- **Aplicación Web:** http://localhost:8080
+- **Aplicación Web:** http://localhost:8081 (o el valor de `WEB_PORT` en `.env`)
 - **Grafana (Monitorización):** http://localhost:3000
   - **Usuario:** `admin` (o el configurado en `.env` con `GRAFANA_ADMIN_USER`)
   - **Contraseña:** `admin123` (o la configurada en `.env` con `GRAFANA_ADMIN_PASSWORD`)
@@ -137,7 +137,7 @@ docker ps
 ## Servicios Incluidos
 
 ### 1. Web (Aplicación PHP)
-- **Puerto:** 8080 (configurable)
+- **Puerto:** 8081 (configurable con `WEB_PORT`)
 - **Imagen:** Construida desde `Dockerfile`
 - **Volúmenes:**
   - `./assets/images` - Imágenes subidas por usuarios
@@ -559,12 +559,14 @@ Puedes usar herramientas como 7-Zip o WinRAR para comprimir la carpeta `assets\i
 ### Error: "ports are not available" o "bind: address already in use"
 
 **Problema:**
-Un puerto necesario (3306 para MySQL, 8080 para web, etc.) ya está en uso por otro servicio en tu máquina.
+Un puerto necesario (3306 para MySQL, 8081 para web por defecto, etc.) ya está en uso por otro servicio en tu máquina.
 
 **Causas comunes:**
 - MySQL de XAMPP/WAMP está ejecutándose en el puerto 3306
-- Otra aplicación está usando el puerto 8080
+- Otra aplicación (o WSL) está usando el puerto 8081 (o el definido en `WEB_PORT`)
 - Otro contenedor Docker está usando los mismos puertos
+
+**Nota (Windows + WSL):** si `http://localhost:<WEB_PORT>` devuelve “empty reply” o no carga, pero los contenedores están “Up”, suele ser un conflicto del forwarding de WSL. Prueba con `http://<IP_LOCAL>:<WEB_PORT>` o cambia `WEB_PORT` a otro puerto libre.
 
 **Solución 1: Cambiar el puerto en `.env` (Recomendado)**
 
@@ -575,7 +577,7 @@ Edita tu archivo `.env` y cambia el puerto conflictivo:
 MYSQL_PORT=3307
 ```
 
-**Para la aplicación web (puerto 8080 ocupado):**
+**Para la aplicación web (puerto `WEB_PORT` ocupado):**
 ```env
 WEB_PORT=8081
 ```

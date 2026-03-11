@@ -131,7 +131,7 @@ if ($method === 'POST') {
                 } else {
                     $https  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
                     $scheme = $https ? 'https' : 'http';
-                    $host   = $_SERVER['HTTP_HOST'] ?? ('localhost:' . (getenv('WEB_PORT') ?: '8080'));
+                    $host   = $_SERVER['HTTP_HOST'] ?? ('localhost:' . (getenv('WEB_PORT') ?: '8081'));
                     $baseUrl = $scheme . '://' . $host;
                 }
             }

@@ -6,7 +6,7 @@ services:
     build: .
     container_name: taller_mecanico_web
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${WEB_PORT:-8081}:80"
     volumes:
       - ./:/var/www/html
       - ./assets/images:/var/www/html/assets/images

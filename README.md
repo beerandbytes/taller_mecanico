@@ -164,12 +164,12 @@ docker-compose ps
 ```
 
 **Acceso a los servicios:**
-- 🌐 **Aplicación Web:** http://localhost:8080
+- 🌐 **Aplicación Web:** http://localhost:8081 (o el valor de `WEB_PORT` en `.env`)
 - 📊 **Grafana (Monitorización):** http://localhost:3000
   - **Usuario:** `admin`
   - **Contraseña:** `admin123`
 - 📈 **Prometheus:** http://localhost:9090
-- 📊 **Endpoint de Métricas PHP:** http://localhost:8080/metrics.php
+- 📊 **Endpoint de Métricas PHP:** http://localhost:8081/metrics.php (o el valor de `WEB_PORT` en `.env`)
 - 🗄️ **MySQL (desde host):** localhost:3306
 
 **Nota para Windows:** Asegúrate de que Docker Desktop esté ejecutándose antes de ejecutar los comandos. La primera vez puede tardar varios minutos en descargar las imágenes.
@@ -182,7 +182,7 @@ Dokploy te permite desplegar proyectos Docker/Compose desde un repositorio Git c
 
 Este proyecto incluye un compose pensado para Dokploy: `docker-compose.dokploy.yml`.
 
-- Evita bind-mounts del código (`./:/var/www/html`) y mapeos de puertos al host (`8080:80`)
+- Evita bind-mounts del código (`./:/var/www/html`) y mapeos de puertos al host (`<WEB_PORT>:80`)
 - Usa volúmenes nombrados para persistir `assets/images`, `logs` y `cache`
 
 #### 2) Crear el proyecto en Dokploy
@@ -221,7 +221,7 @@ Con Cloudflare Tunnel, el servidor no necesita exponer puertos públicos (Cloudf
 3. Elige método **Docker** y copia el **token** del conector.
 4. Ejecuta el conector `cloudflared`:
    - **Recomendado (con Dokploy + Compose):** descomenta el servicio `cloudflared` en `docker-compose.dokploy.yml` y define `CLOUDFLARE_TUNNEL_TOKEN` en Dokploy.
-   - **Alternativa (si expones la app en un puerto del host):** ejecuta `cloudflared` en Docker y apunta al puerto local (por ejemplo `http://127.0.0.1:8080`).
+   - **Alternativa (si expones la app en un puerto del host):** ejecuta `cloudflared` en Docker y apunta al puerto local (por ejemplo `http://127.0.0.1:8081` o el valor de `WEB_PORT`).
      ```bash
      # Linux (host networking)
      docker run -d --name cloudflared --restart unless-stopped --network host \
@@ -230,7 +230,7 @@ Con Cloudflare Tunnel, el servidor no necesita exponer puertos públicos (Cloudf
 5. En el túnel, crea un **Public Hostname** (esto crea/gestiona el DNS automáticamente):
    - **Subdomain:** `taller` (ejemplo) / **Domain:** `tudominio.com`
    - **Type:** `HTTP`
-   - **URL/Service:** apunta al servicio de tu app (por ejemplo `http://web:80` si `cloudflared` está en el mismo Compose/red, o `http://127.0.0.1:8080` si usas un puerto en el host)
+   - **URL/Service:** apunta al servicio de tu app (por ejemplo `http://web:80` si `cloudflared` está en el mismo Compose/red, o `http://127.0.0.1:8081`/`WEB_PORT` si usas un puerto en el host)
 6. Espera a que el túnel aparezca como **Healthy** y prueba `https://taller.tudominio.com`.
 
 > Si prefieres DNS manual, Cloudflare Tunnel usa un CNAME del hostname público hacia `UUID_DEL_TUNNEL.cfargotunnel.com`.
@@ -343,7 +343,7 @@ C:\xampp\php\php.exe -S localhost:8000
 ### Credenciales de la Aplicación Web
 
 **Administrador por defecto:**
-- **URL:** http://localhost:8080 (Docker) o http://localhost/taller_mecanico (XAMPP)
+- **URL:** http://localhost:8081 (Docker, configurable con `WEB_PORT`) o http://localhost/taller_mecanico (XAMPP)
 - **Usuario:** `admin`
 - **Contraseña:** `admin123`
 
@@ -422,7 +422,7 @@ GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin123
 
 # Puertos
-WEB_PORT=8080
+WEB_PORT=8081
 MYSQL_PORT=3306
 PROMETHEUS_PORT=9090
 GRAFANA_PORT=3000
@@ -648,13 +648,13 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 
 | Servicio | URL | Puerto | Credenciales |
 |----------|-----|--------|--------------|
-| **Aplicación Web** | http://localhost:8080 | 8080 | admin / admin123 |
+| **Aplicación Web** | http://localhost:8081 | 8081 (`WEB_PORT`) | admin / admin123 |
 | **Grafana** | http://localhost:3000 | 3000 | admin / admin123 |
 | **Prometheus** | http://localhost:9090 | 9090 | Sin autenticación |
 | **MySQL** | localhost:3306 | 3306 | root / rootpassword |
 | **Node Exporter** | http://localhost:9100/metrics | 9100 | Sin autenticación |
 | **MySQL Exporter** | http://localhost:9104/metrics | 9104 | Sin autenticación |
-| **Métricas PHP** | http://localhost:8080/metrics.php | - | Sin autenticación |
+| **Métricas PHP** | http://localhost:8081/metrics.php | - | Sin autenticación |
 
 ### Con XAMPP (Instalación Local)
 
@@ -721,6 +721,7 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 
 **Soluciones comunes:**
 - **Puertos ocupados:** Cambia los puertos en `.env` (por ejemplo, `WEB_PORT=8081`) o detén los servicios que los usan
+- **Windows + WSL (localhost no responde):** Si `http://localhost:<WEB_PORT>` devuelve “empty reply” o se queda cargando, prueba `http://<IP_LOCAL>:<WEB_PORT>` (por ejemplo `http://192.168.x.x:8081`) o cambia `WEB_PORT` a otro puerto libre (suele ser un conflicto de forwarding de WSL).
 - **Contenedores no inician:** Revisa `docker-compose logs` para ver errores
 - **Docker Desktop no inicia (Windows):** Verifica que WSL 2 esté instalado y habilitado
 - **Credenciales incorrectas:** Verifica el archivo `.env` y las variables de entorno configuradas
@@ -778,7 +779,7 @@ Para obtener ayuda:
 ### 🔐 Credenciales Principales
 
 #### Aplicación Web (Admin)
-- **URL:** http://localhost:8080 (Docker) o http://localhost/taller_mecanico (XAMPP)
+- **URL:** http://localhost:8081 (Docker, configurable con `WEB_PORT`) o http://localhost/taller_mecanico (XAMPP)
 - **Usuario:** `admin`
 - **Contraseña:** `admin123`
 
@@ -820,7 +821,7 @@ Todos los puertos se configuran en el archivo `.env`:
 
 | Variable | Puerto por Defecto | Descripción |
 |----------|---------------------|-------------|
-| `WEB_PORT` | 8080 | Puerto de la aplicación web |
+| `WEB_PORT` | 8081 | Puerto de la aplicación web |
 | `MYSQL_PORT` | 3306 | Puerto de MySQL |
 | `PROMETHEUS_PORT` | 9090 | Puerto de Prometheus |
 | `GRAFANA_PORT` | 3000 | Puerto de Grafana |

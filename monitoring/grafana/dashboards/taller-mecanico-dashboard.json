@@ -1405,7 +1405,7 @@
             "title": "Test Email (Alertas)",
             "tooltip": "Enviar un email de prueba vía Alertmanager",
             "type": "link",
-            "url": "http://localhost:8080/admin/test-alert-email.php"
+            "url": "http://localhost:8081/admin/test-alert-email.php"
         },
         {
             "asDropdown": false,

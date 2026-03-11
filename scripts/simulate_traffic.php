@@ -9,7 +9,7 @@
  *   php scripts/simulate_traffic.php [--users=N] [--duration=S] [--profile=normal|burst|idle]
  *
  * Environment variables:
- *   SIM_BASE_URL  - Base URL to hit (default: http://localhost:8080)
+ *   SIM_BASE_URL  - Base URL to hit (default: http://localhost:8081)
  */
 
 // ====== Parse CLI arguments ======
@@ -17,7 +17,7 @@ $options = getopt('', ['users::', 'duration::', 'profile::', 'base-url::']);
 $users     = max(1, (int)($options['users']    ?? 3));
 $duration  = max(1, (int)($options['duration'] ?? 60));
 $profile   = $options['profile']  ?? 'normal';
-$baseUrl   = $options['base-url'] ?? (getenv('SIM_BASE_URL') ?: 'http://localhost:8080');
+$baseUrl   = $options['base-url'] ?? (getenv('SIM_BASE_URL') ?: 'http://localhost:8081');
 
 // Strip trailing slash
 $baseUrl = rtrim($baseUrl, '/');

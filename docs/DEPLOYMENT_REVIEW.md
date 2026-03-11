@@ -240,8 +240,8 @@ El comando de restore documentado tenía múltiples problemas críticos:
    - MySQL Exporter se conecta a MySQL
 
 5. ✅ **Verificación:**
-   - Aplicación accesible en `http://localhost:8080`
-   - Métricas disponibles en `http://localhost:8080/metrics.php`
+   - Aplicación accesible en `http://localhost:8081` (o el valor de `WEB_PORT`)
+   - Métricas disponibles en `http://localhost:8081/metrics.php` (o el valor de `WEB_PORT`)
    - Prometheus scraping métricas correctamente
    - Grafana muestra dashboards
 
@@ -260,7 +260,7 @@ docker-compose logs -f web
 
 ### Prueba 2: Endpoint de Métricas
 ```bash
-curl http://localhost:8080/metrics.php
+curl http://localhost:8081/metrics.php
 ```
 **Verificar:** Retorna métricas en formato Prometheus sin errores
 

@@ -30,7 +30,7 @@ Ver la guía completa en [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
    ```
 
 3. Acceder a la aplicación:
-   - Web: http://localhost:8080
+   - Web: http://localhost:8081 (o el valor de `WEB_PORT`)
    - Grafana: http://localhost:3000
 
 ### Opción 2: Instalación Local sin Docker
