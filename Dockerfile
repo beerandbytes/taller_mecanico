@@ -1,5 +1,21 @@
 FROM php:8.2-apache
 
+# Defaults to avoid Apache PassEnv warnings when variables are not set.
+# (Coolify/Compose will override these at runtime.)
+ENV DB_HOST= \
+    DB_PORT= \
+    DB_NAME= \
+    DB_USER= \
+    DB_PASS= \
+    APP_ENV= \
+    APP_DEBUG= \
+    DEPLOY_TARGET= \
+    MYSQL_HOST= \
+    MYSQL_PORT= \
+    MYSQL_DATABASE= \
+    MYSQL_USER= \
+    MYSQL_PASSWORD=
+
 # Instalar extensiones PHP necesarias y mysql-client para entrypoint
 RUN apt-get update && apt-get install -y \
     libpng-dev \
@@ -19,6 +35,9 @@ RUN a2enmod rewrite
 
 # Configurar Apache para permitir .htaccess
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# Evitar warning de FQDN en logs
+RUN echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf && a2enconf servername
 
 # Expose environment variables to Apache/PHP
 RUN echo "PassEnv DB_HOST DB_PORT DB_NAME DB_USER DB_PASS APP_ENV APP_DEBUG DEPLOY_TARGET MYSQL_HOST MYSQL_PORT MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD" >> /etc/apache2/conf-enabled/expose-env.conf

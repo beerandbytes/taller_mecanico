@@ -126,3 +126,19 @@ Pasos:
 1. Revisa logs del servicio **mysql** y confirma que está “healthy/ready”.
 2. Revisa logs del servicio **web** (PHP) y confirma qué variables de entorno están configuradas.
 3. Si necesitas ver detalles en pantalla temporalmente: pon `APP_DEBUG=true` y vuelve a desplegar (después vuelve a `false`).
+
+## 7) Caso real: “la BD existe pero faltan tablas”
+
+Si ves errores como:
+
+- `Table 'trabajo_final_php.users_data' doesn't exist`
+
+Significa que el volumen de MySQL se creó, pero el init SQL no llegó a ejecutarse (o se desplegó una vez con un volumen vacío y luego quedó “a medias”).
+
+Soluciones:
+
+- **Recomendado:** borra el volumen `mysql_data` en Coolify y despliega de nuevo (esto re-ejecuta los scripts en `/docker-entrypoint-initdb.d/`).
+- Alternativa (automática): el contenedor `web` intenta importar `database/database.sql` si detecta que falta `users_data`.
+  - Variables opcionales:
+    - `AUTO_SCHEMA_IMPORT=1` (por defecto `1`)
+    - `SCHEMA_FILE=/var/www/html/database/database.sql`

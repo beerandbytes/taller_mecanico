@@ -75,6 +75,34 @@ if ! mysql --defaults-extra-file="$TMP_CNF" --protocol=tcp -e "USE ${DB_NAME};" 
 else
     echo "Base de datos '${DB_NAME}' verificada correctamente."
 
+    # Si la BD existe pero faltan tablas base, importar el esquema (útil en despliegues tipo Coolify)
+    AUTO_SCHEMA_IMPORT="${AUTO_SCHEMA_IMPORT:-1}"
+    SCHEMA_FILE="${SCHEMA_FILE:-/var/www/html/database/database.sql}"
+
+    table_exists() {
+      local table="$1"
+      local found
+      found=$(mysql --defaults-extra-file="$TMP_CNF" --protocol=tcp -N -B -e "SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA='${DB_NAME}' AND TABLE_NAME='${table}' LIMIT 1;" 2>/dev/null || true)
+      [[ "$found" == "1" ]]
+    }
+
+    if [ "$AUTO_SCHEMA_IMPORT" = "1" ] && ! table_exists "users_data"; then
+        if [ -f "$SCHEMA_FILE" ]; then
+            echo "ADVERTENCIA: No existe la tabla base 'users_data'. Importando esquema desde ${SCHEMA_FILE} (AUTO_SCHEMA_IMPORT=${AUTO_SCHEMA_IMPORT})..."
+            mysql --defaults-extra-file="$TMP_CNF" --protocol=tcp "${DB_NAME}" < "$SCHEMA_FILE"
+
+            if table_exists "users_data"; then
+                echo "Esquema importado correctamente."
+            else
+                echo "ERROR: Se importó el esquema pero 'users_data' sigue sin existir. Revisa el contenido de ${SCHEMA_FILE}." >&2
+                exit 1
+            fi
+        else
+            echo "ERROR: Falta la tabla base 'users_data' y no se encontró el archivo de esquema: ${SCHEMA_FILE}" >&2
+            exit 1
+        fi
+    fi
+
     # Aplicar migración idempotente para instalaciones existentes (volumen mysql_data ya creado)
     if [ "${AUTO_MIGRATE:-1}" = "1" ] && [ -f /var/www/html/scripts/update_schema_v2.php ]; then
         echo "Aplicando migraciones (AUTO_MIGRATE=${AUTO_MIGRATE:-1})..."
