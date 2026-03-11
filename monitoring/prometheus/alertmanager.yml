@@ -1,9 +1,9 @@
 global:
-  smtp_smarthost: 'localhost:587'
-  smtp_from: 'monitoring@tallermecanico.com'
-  smtp_auth_username: 'monitoring@tallermecanico.com'
-  smtp_auth_password: 'your-email-password'
-  smtp_require_tls: true
+  smtp_smarthost: '__SMTP_SMARTHOST__'
+  smtp_from: '__SMTP_FROM__'
+  smtp_auth_username: '__SMTP_AUTH_USERNAME__'
+  smtp_auth_password: '__SMTP_AUTH_PASSWORD__'
+  smtp_require_tls: __SMTP_REQUIRE_TLS__
 
 # Configuración de enrutamiento de alertas
 route:
@@ -11,7 +11,7 @@ route:
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 12h
-  receiver: 'web.hook'
+  receiver: 'email-default'
   routes:
   - match:
       severity: critical
@@ -26,20 +26,44 @@ route:
 
 # Receptores de notificaciones
 receivers:
-- name: 'web.hook'
-  webhook_configs:
-  - url: 'http://127.0.0.1:5001/'
+- name: 'email-default'
+  email_configs:
+  - to: '{{ if .CommonLabels.alert_to }}{{ .CommonLabels.alert_to }}{{ else }}__ALERT_EMAIL_TO__{{ end }}'
+    send_resolved: true
+    headers:
+      subject: '[INFO] {{ .CommonLabels.alertname }} - Taller Mecánico'
+    text: |
+      Alerta Detectada
+
+      Resumen: {{ .CommonLabels.alertname }}
+      Severidad: {{ .CommonLabels.severity }}
+      Servicio: {{ .CommonLabels.service }}
+      Componente: {{ .CommonLabels.component }}
+
+      Detalles:
+      {{ range .Alerts }}
+      - {{ .Annotations.summary }}
+        Descripción: {{ .Annotations.description }}
+        Instancia: {{ .Labels.instance }}
+        Valor: {{ .Value }}
+      {{ end }}
+
+      Grafana: http://localhost:3000
+
+      Mensaje automático del sistema de monitoreo.
 
 - name: 'critical-alerts'
   email_configs:
-  - to: 'admin@tallermecanico.com'
-    subject: '[CRITICAL] {{ .GroupLabels.alertname }} - Taller Mecánico'
-    body: |
+  - to: '{{ if .CommonLabels.alert_to }}{{ .CommonLabels.alert_to }}{{ else }}__ALERT_EMAIL_TO__{{ end }}'
+    send_resolved: true
+    headers:
+      subject: '[CRITICAL] {{ .CommonLabels.alertname }} - Taller Mecánico'
+    text: |
       Alerta Crítica Detectada
       
-      Resumen: {{ .GroupLabels.alertname }}
-      Servicio: {{ .GroupLabels.service }}
-      Componente: {{ .GroupLabels.component }}
+      Resumen: {{ .CommonLabels.alertname }}
+      Servicio: {{ .CommonLabels.service }}
+      Componente: {{ .CommonLabels.component }}
       
       Detalles:
       {{ range .Alerts }}
@@ -55,14 +79,16 @@ receivers:
 
 - name: 'warning-alerts'
   email_configs:
-  - to: 'admin@tallermecanico.com'
-    subject: '[WARNING] {{ .GroupLabels.alertname }} - Taller Mecánico'
-    body: |
+  - to: '{{ if .CommonLabels.alert_to }}{{ .CommonLabels.alert_to }}{{ else }}__ALERT_EMAIL_TO__{{ end }}'
+    send_resolved: true
+    headers:
+      subject: '[WARNING] {{ .CommonLabels.alertname }} - Taller Mecánico'
+    text: |
       Alerta de Advertencia
       
-      Resumen: {{ .GroupLabels.alertname }}
-      Servicio: {{ .GroupLabels.service }}
-      Componente: {{ .GroupLabels.component }}
+      Resumen: {{ .CommonLabels.alertname }}
+      Servicio: {{ .CommonLabels.service }}
+      Componente: {{ .CommonLabels.component }}
       
       Detalles:
       {{ range .Alerts }}

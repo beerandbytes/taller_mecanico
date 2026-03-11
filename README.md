@@ -20,6 +20,7 @@ Sistema web completo desarrollado con PHP y MySQL para la gestión de un taller 
 - **Servidor Web:** Apache 2.4
 - **Contenedores:** Docker & Docker Compose
 - **Monitorización:** Prometheus, Grafana, Node Exporter, MySQL Exporter
+- **Alertas:** Alertmanager (notificaciones por email)
 
 ## Estructura del Proyecto
 
@@ -62,12 +63,16 @@ taller_mecanico/
 ├── noticias-administracion.php    # CRUD noticias para admin
 ├── Dockerfile               # Imagen Docker de la aplicación
 ├── docker-compose.yml       # Orquestación de servicios
+├── docker-compose.dokploy.yml # Orquestación para Dokploy (producción)
 ├── .env.example             # Ejemplo de variables de entorno
 ├── README.md                # Este archivo
-├── GUIA_USUARIO.md          # Guía de usuario completa
-├── STACK_TECNOLOGICO.md     # Stack tecnológico detallado
-├── DOCKER_DEPLOYMENT.md     # Guía de despliegue Docker
-└── MONITORING.md            # Guía del sistema de monitoreo
+├── docs/
+│   ├── GUIA_USUARIO.md              # Guía de usuario completa
+│   ├── STACK_TECNOLOGICO.md         # Stack tecnológico detallado
+│   ├── DOCKER_DEPLOYMENT.md         # Guía de despliegue Docker
+│   ├── MONITORING_SETUP_GUIDE.md    # Guía del sistema de monitorización
+│   ├── GUIA_DESPLIEGUE_LOCAL.md     # Guía despliegue local (XAMPP)
+│   └── INSTALL.md                   # Guía de instalación rápida
 ```
 
 ## Requisitos Previos
@@ -82,7 +87,7 @@ taller_mecanico/
 - Docker Desktop para Windows (incluye Docker Engine y Docker Compose)
 - Windows 10 64-bit (Build 19041+) o Windows 11 64-bit
 - WSL 2 habilitado (se instala automáticamente con Docker Desktop)
-- Ver [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) para instrucciones detalladas de instalación en Windows
+- Ver [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md) para instrucciones detalladas de instalación en Windows
 
 ### Para Instalación Local
 - PHP 7.4 o superior (recomendado PHP 8.2+)
@@ -99,14 +104,14 @@ taller_mecanico/
 **Para Windows:**
 - **Opción recomendada:** XAMPP (incluye PHP, MySQL, Apache y phpMyAdmin)
   - Descarga desde: https://www.apachefriends.org/
-  - Ver [GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md) para guía paso a paso
+  - Ver [docs/GUIA_DESPLIEGUE_LOCAL.md](docs/GUIA_DESPLIEGUE_LOCAL.md) para guía paso a paso
 - **Alternativa:** WAMP Server o instalación manual de PHP y MySQL
 
 ## 📦 Instalación
 
 ### Opción 1: Instalación con Docker (Recomendado) 🐳
 
-Para una instalación rápida y completa con monitorización incluida, consulta la [Guía de Despliegue con Docker](DOCKER_DEPLOYMENT.md).
+Para una instalación rápida y completa con monitorización incluida, consulta la [Guía de Despliegue con Docker](docs/DOCKER_DEPLOYMENT.md).
 
 **Inicio rápido:**
 
@@ -169,11 +174,68 @@ docker-compose ps
 
 **Nota para Windows:** Asegúrate de que Docker Desktop esté ejecutándose antes de ejecutar los comandos. La primera vez puede tardar varios minutos en descargar las imágenes.
 
-### Opción 2: Instalación Local sin Docker 💻
+### Opción 2: Despliegue en Producción con Dokploy 🛳️
 
-> **💡 Para usuarios de Windows con XAMPP:** Consulta la [Guía de Despliegue Local con XAMPP](GUIA_DESPLIEGUE_LOCAL.md) para instrucciones paso a paso específicas de Windows.
+Dokploy te permite desplegar proyectos Docker/Compose desde un repositorio Git con dominios y HTTPS gestionados desde el panel.
 
-> **📖 Para una guía rápida:** Consulta [INSTALL.md](INSTALL.md) para instrucciones de instalación rápida.
+#### 1) Preparar el repositorio (recomendado)
+
+Este proyecto incluye un compose pensado para Dokploy: `docker-compose.dokploy.yml`.
+
+- Evita bind-mounts del código (`./:/var/www/html`) y mapeos de puertos al host (`8080:80`)
+- Usa volúmenes nombrados para persistir `assets/images`, `logs` y `cache`
+
+#### 2) Crear el proyecto en Dokploy
+
+1. En Dokploy, crea un **Project/App** nuevo y conecta tu repositorio Git (elige rama).
+2. Selecciona despliegue tipo **Docker Compose**.
+3. Configura el **Compose file** como `docker-compose.dokploy.yml`.
+4. En variables/secretos, crea las variables necesarias (ver siguiente punto).
+5. Lanza el **Deploy** y revisa logs si algo falla.
+
+#### 3) Configurar variables de entorno en Dokploy
+
+Como base, usa `.env.example` y cambia credenciales para producción:
+
+- `MYSQL_ROOT_PASSWORD`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
+- `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`
+- `APP_ENV=production`, `APP_DEBUG=false`
+- (Opcional alertas) `ALERT_EMAIL_TO`, `SMTP_SMARTHOST`, `SMTP_FROM`, `SMTP_AUTH_USERNAME`, `SMTP_AUTH_PASSWORD`
+
+#### 4) Configurar dominio y HTTPS (opción A: sin Cloudflare Tunnel)
+
+1. En Dokploy, añade un **Domain** a la app/servicio `web` (puerto `80`).
+2. Activa **HTTPS/Let’s Encrypt** en el dominio.
+3. (Opcional) Añade otro dominio al servicio `grafana` (puerto `3000`) si quieres exponer Grafana.
+
+#### 5) Publicar el proyecto con Cloudflare Tunnel (opción B: sin abrir puertos 80/443)
+
+Con Cloudflare Tunnel, el servidor no necesita exponer puertos públicos (Cloudflare se conecta “hacia dentro”).
+
+1. En Cloudflare, añade tu dominio a tu cuenta (si aún no lo hiciste) y asegúrate de usar sus nameservers.
+2. En **Cloudflare Zero Trust** → **Access** → **Tunnels** → **Create a tunnel**.
+3. Elige método **Docker** y copia el **token** del conector.
+4. Ejecuta el conector `cloudflared`:
+   - **Recomendado (con Dokploy + Compose):** descomenta el servicio `cloudflared` en `docker-compose.dokploy.yml` y define `CLOUDFLARE_TUNNEL_TOKEN` en Dokploy.
+   - **Alternativa (si expones la app en un puerto del host):** ejecuta `cloudflared` en Docker y apunta al puerto local (por ejemplo `http://127.0.0.1:8080`).
+     ```bash
+     # Linux (host networking)
+     docker run -d --name cloudflared --restart unless-stopped --network host \
+       cloudflare/cloudflared:latest tunnel --no-autoupdate run --token <TU_TOKEN>
+     ```
+5. En el túnel, crea un **Public Hostname** (esto crea/gestiona el DNS automáticamente):
+   - **Subdomain:** `taller` (ejemplo) / **Domain:** `tudominio.com`
+   - **Type:** `HTTP`
+   - **URL/Service:** apunta al servicio de tu app (por ejemplo `http://web:80` si `cloudflared` está en el mismo Compose/red, o `http://127.0.0.1:8080` si usas un puerto en el host)
+6. Espera a que el túnel aparezca como **Healthy** y prueba `https://taller.tudominio.com`.
+
+> Si prefieres DNS manual, Cloudflare Tunnel usa un CNAME del hostname público hacia `UUID_DEL_TUNNEL.cfargotunnel.com`.
+
+### Opción 3: Instalación Local sin Docker 💻
+
+> **💡 Para usuarios de Windows con XAMPP:** Consulta la [Guía de Despliegue Local con XAMPP](docs/GUIA_DESPLIEGUE_LOCAL.md) para instrucciones paso a paso específicas de Windows.
+
+> **📖 Para una guía rápida:** Consulta [docs/INSTALL.md](docs/INSTALL.md) para instrucciones de instalación rápida.
 
 #### 1. Configurar Base de Datos
 
@@ -565,15 +627,15 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 
 **📚 Documentación:**
 - **[MONITORING.md](MONITORING.md)** - Guía completa del sistema de monitoreo
-- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guía de despliegue con Docker
+- **[docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)** - Guía de despliegue con Docker
 
 ## 📚 Documentación Adicional
 
-- 📖 **[GUIA_USUARIO.md](GUIA_USUARIO.md)** - Guía completa de uso para todos los tipos de usuarios (visitantes, usuarios registrados y administradores)
-- 🔧 **[STACK_TECNOLOGICO.md](STACK_TECNOLOGICO.md)** - Detalles técnicos del stack tecnológico utilizado
-- 🐳 **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Guía completa de despliegue con Docker y monitorización (incluye instrucciones para Windows, Linux y Mac)
-- 💻 **[GUIA_DESPLIEGUE_LOCAL.md](GUIA_DESPLIEGUE_LOCAL.md)** - Guía paso a paso para desplegar con XAMPP en Windows
-- ⚡ **[INSTALL.md](INSTALL.md)** - Guía de instalación rápida sin Docker (incluye comandos para Windows, Linux y Mac)
+- 📖 **[docs/GUIA_USUARIO.md](docs/GUIA_USUARIO.md)** - Guía completa de uso para todos los tipos de usuarios (visitantes, usuarios registrados y administradores)
+- 🔧 **[docs/STACK_TECNOLOGICO.md](docs/STACK_TECNOLOGICO.md)** - Detalles técnicos del stack tecnológico utilizado
+- 🐳 **[docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)** - Guía completa de despliegue con Docker y monitorización (incluye instrucciones para Windows, Linux y Mac)
+- 💻 **[docs/GUIA_DESPLIEGUE_LOCAL.md](docs/GUIA_DESPLIEGUE_LOCAL.md)** - Guía paso a paso para desplegar con XAMPP en Windows
+- ⚡ **[docs/INSTALL.md](docs/INSTALL.md)** - Guía de instalación rápida sin Docker (incluye comandos para Windows, Linux y Mac)
 - 📊 **[MONITORING.md](MONITORING.md)** - Guía completa del sistema de monitoreo con Prometheus y Grafana
 
 ## 🔗 URLs y Puertos de Acceso
@@ -659,7 +721,7 @@ El proyecto incluye un sistema completo de monitorización con Prometheus y Graf
 - **Docker Desktop no inicia (Windows):** Verifica que WSL 2 esté instalado y habilitado
 - **Credenciales incorrectas:** Verifica el archivo `.env` y las variables de entorno configuradas
 
-📖 **Para más ayuda:** Consulta la sección "Solución de Problemas" en [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) para problemas específicos de Docker.
+📖 **Para más ayuda:** Consulta la sección "Solución de Problemas" en [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md) para problemas específicos de Docker.
 
 ## 🎯 Estado del Proyecto
 
@@ -739,6 +801,10 @@ Para obtener ayuda:
 - **URL:** http://localhost:9090
 - **Sin autenticación** (configurar en producción)
 
+#### Alertmanager (Solo con Docker)
+- **URL:** http://localhost:9093
+- **Email:** configurable vía `.env` (ver `.env.example` y `docs/MONITORING_SETUP_GUIDE.md`)
+
 #### phpMyAdmin (Solo con XAMPP)
 - **URL:** http://localhost/phpmyadmin
 - **Usuario:** `root`
@@ -754,6 +820,7 @@ Todos los puertos se configuran en el archivo `.env`:
 | `MYSQL_PORT` | 3306 | Puerto de MySQL |
 | `PROMETHEUS_PORT` | 9090 | Puerto de Prometheus |
 | `GRAFANA_PORT` | 3000 | Puerto de Grafana |
+| `ALERTMANAGER_PORT` | 9093 | Puerto de Alertmanager |
 
 ### 🔄 Cambiar Credenciales
 

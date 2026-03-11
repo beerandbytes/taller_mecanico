@@ -74,6 +74,14 @@ if ! mysql --defaults-extra-file="$TMP_CNF" --protocol=tcp -e "USE ${DB_NAME};" 
     echo "La aplicación intentará conectarse cuando la base de datos esté disponible."
 else
     echo "Base de datos '${DB_NAME}' verificada correctamente."
+
+    # Aplicar migración idempotente para instalaciones existentes (volumen mysql_data ya creado)
+    if [ "${AUTO_MIGRATE:-1}" = "1" ] && [ -f /var/www/html/scripts/update_schema_v2.php ]; then
+        echo "Aplicando migraciones (AUTO_MIGRATE=${AUTO_MIGRATE:-1})..."
+        if ! php /var/www/html/scripts/update_schema_v2.php; then
+            echo "ADVERTENCIA: Falló la migración automática. La aplicación seguirá arrancando, pero el registro puede fallar si faltan columnas." >&2
+        fi
+    fi
 fi
 
 # Limpiar archivo temporal

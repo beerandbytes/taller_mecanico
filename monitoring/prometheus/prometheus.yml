@@ -11,9 +11,7 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
-          # Para usar Alertmanager en el futuro, descomentar y configurar:
-          # - targets: ['alertmanager:9093']
+        - targets: ['alertmanager:9093']
 
 # Reglas de alertas
 rule_files:
@@ -68,7 +66,7 @@ scrape_configs:
       # Excluir métricas de sistema de archivos que no son relevantes en contenedores
       - source_labels: [__name__]
         regex: 'node_filesystem_(files|free|avail|size)_bytes'
-        action: keep
+        action: drop
 
   # Métricas de MySQL
   - job_name: 'mysqld-exporter'

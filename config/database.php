@@ -14,9 +14,13 @@ if (file_exists(__DIR__ . '/../.env')) {
             if (preg_match('/^["\'](.*)["\']$/', $value, $matches)) {
                 $value = $matches[1];
             }
-            putenv("$key=$value");
-            $_ENV[$key] = $value;
-            $_SERVER[$key] = $value;
+
+            // Don't override already provided environment (e.g. Docker Compose service env)
+            if (getenv($key) === false) {
+                putenv("$key=$value");
+                $_ENV[$key] = $value;
+                $_SERVER[$key] = $value;
+            }
         }
     }
 }

@@ -153,7 +153,7 @@ require_once '../includes/header.php';
                     </div>
                     <div class="d-flex justify-content-between align-items-center px-2">
                         <span class="text-muted small">Tiempo medio resp.</span>
-                        <span class="stat-badge bg-primary bg-opacity-10 text-primary fw-semibold" id="statAvg">—</span>
+                        <span class="stat-badge  bg-opacity-10 text-primary fw-semibold" id="statAvg">—</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center px-2 mt-2">
                         <span class="text-muted small">Tiempo máximo resp.</span>

@@ -113,6 +113,11 @@ $stats = [
                             </a>
                         </div>
                         <div class="col-md-4">
+                            <a href="test-alert-email.php" class="btn btn-outline-secondary w-100 py-3">
+                                <i class="bi bi-envelope-check me-2"></i> Test Email Alertas
+                            </a>
+                        </div>
+                        <div class="col-md-4">
                             <a href="../perfil.php" class="btn btn-outline-secondary w-100 py-3">
                                 <i class="bi bi-person me-2"></i> Mi Perfil Admin
                             </a>

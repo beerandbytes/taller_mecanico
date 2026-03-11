@@ -5,27 +5,32 @@ require_once __DIR__ . '/../config/database.php';
 try {
     echo "Updating schema...\n";
 
-    // Add new columns if they don't exist
-    $columns = [
-        'calle' => 'TEXT',
-        'codigo_postal' => 'VARCHAR(10)',
-        'ciudad' => 'VARCHAR(100)',
-        'provincia' => 'VARCHAR(100)'
-    ];
+    $columnExistsStmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND COLUMN_NAME = ?
+    ");
 
-    foreach ($columns as $col => $type) {
-        try {
-            $pdo->query("SELECT $col FROM users_data LIMIT 1");
-            echo "Column $col already exists.\n";
-        } catch (PDOException $e) {
-            echo "Adding column $col...\n";
-            if ($type === 'TEXT') {
-                 $pdo->exec("ALTER TABLE users_data ADD COLUMN $col $type");
-            } else {
-                 $pdo->exec("ALTER TABLE users_data ADD COLUMN $col $type NOT NULL DEFAULT ''");
-            }
+    $addColumn = function (string $table, string $column, string $ddl) use ($pdo, $columnExistsStmt): void {
+        $columnExistsStmt->execute([$table, $column]);
+        $exists = (int)$columnExistsStmt->fetchColumn() > 0;
+
+        if ($exists) {
+            echo "Column {$column} already exists.\n";
+            return;
         }
-    }
+
+        echo "Adding column {$column}...\n";
+        $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$ddl}");
+    };
+
+    // Keep types aligned with database/database.sql
+    $addColumn('users_data', 'calle', 'calle VARCHAR(255) NULL');
+    $addColumn('users_data', 'codigo_postal', 'codigo_postal VARCHAR(10) NULL');
+    $addColumn('users_data', 'ciudad', 'ciudad VARCHAR(100) NULL');
+    $addColumn('users_data', 'provincia', 'provincia VARCHAR(100) NULL');
 
     echo "Schema update completed successfully.\n";
 

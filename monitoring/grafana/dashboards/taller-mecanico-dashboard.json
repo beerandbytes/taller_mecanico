@@ -1,6 +1,6 @@
 {
     "id": null,
-    "title": "Taller MecÃ¡nico - Dashboard Principal",
+    "title": "Taller Mecanico - Dashboard Principal",
     "tags": [
         "taller",
         "mecanico",
@@ -62,7 +62,7 @@
         },
         {
             "id": 2,
-            "title": "TrÃ¡fico Web en Tiempo Real",
+            "title": "Trafico Web en Tiempo Real",
             "type": "timeseries",
             "gridPos": {
                 "h": 8,
@@ -1394,6 +1394,18 @@
             "tooltip": "Ir a Prometheus",
             "type": "link",
             "url": "http://localhost:9090"
+        },
+        {
+            "asDropdown": false,
+            "icon": "external link",
+            "includeVars": false,
+            "keepTime": false,
+            "tags": [],
+            "targetBlank": true,
+            "title": "Test Email (Alertas)",
+            "tooltip": "Enviar un email de prueba vía Alertmanager",
+            "type": "link",
+            "url": "http://localhost:8080/admin/test-alert-email.php"
         },
         {
             "asDropdown": false,
