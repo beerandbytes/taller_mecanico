@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 set -e
 # Entrypoint script for mysqld-exporter
 # Generates .my.cnf file from environment variables
@@ -30,7 +30,7 @@ if [ ! -f "$MY_CNF_PATH" ]; then
 fi
 
 # Wait for MySQL to be ready before starting exporter
-echo "Esperando a que MySQL esté listo..."
+echo "Esperando a que MySQL estÃ© listo..."
 MAX_ATTEMPTS=60
 ATTEMPT=0
 MYSQL_READY=0
@@ -41,7 +41,7 @@ if command -v mysql >/dev/null 2>&1; then
 elif [ -f /usr/bin/mysql ]; then
     MYSQL_CLIENT="/usr/bin/mysql"
 else
-    echo "ADVERTENCIA: mysql client no encontrado, saltando verificación de conectividad"
+    echo "ADVERTENCIA: mysql client no encontrado, saltando verificaciÃ³n de conectividad"
     MYSQL_CLIENT=""
 fi
 
@@ -62,23 +62,23 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
         else
             # If no tools available, just wait a bit and assume it's ready
             if [ $ATTEMPT -gt 10 ]; then
-                echo "ADVERTENCIA: No se puede verificar MySQL, asumiendo que está listo"
+                echo "ADVERTENCIA: No se puede verificar MySQL, asumiendo que estÃ¡ listo"
                 MYSQL_READY=1
                 break
             fi
         fi
     fi
     ATTEMPT=$((ATTEMPT + 1))
-    echo "Intento $ATTEMPT/$MAX_ATTEMPTS: MySQL no está listo, esperando..."
+    echo "Intento $ATTEMPT/$MAX_ATTEMPTS: MySQL no estÃ¡ listo, esperando..."
     sleep 2
 done
 
 if [ $MYSQL_READY -eq 0 ]; then
-    echo "ERROR: MySQL no está disponible después de $MAX_ATTEMPTS intentos" >&2
+    echo "ERROR: MySQL no estÃ¡ disponible despuÃ©s de $MAX_ATTEMPTS intentos" >&2
     exit 1
 fi
 
-echo "MySQL está listo! Iniciando mysqld_exporter..."
+echo "MySQL estÃ¡ listo! Iniciando mysqld_exporter..."
 
 # Find mysqld_exporter binary
 MYSQLD_EXPORTER=""
@@ -91,7 +91,7 @@ elif [ -x /usr/bin/mysqld_exporter ]; then
 elif [ -x /usr/local/bin/mysqld_exporter ]; then
     MYSQLD_EXPORTER="/usr/local/bin/mysqld_exporter"
 else
-    echo "ADVERTENCIA: mysqld_exporter no encontrado en rutas estándar, buscando..." >&2
+    echo "ADVERTENCIA: mysqld_exporter no encontrado en rutas estÃ¡ndar, buscando..." >&2
     # Use find and capture first result
     FOUND_PATH=$(find /usr /bin /sbin -name mysqld_exporter -type f -executable 2>/dev/null | head -1)
     if [ -n "$FOUND_PATH" ] && [ -x "$FOUND_PATH" ]; then

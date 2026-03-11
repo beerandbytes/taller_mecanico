@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 set -eu
 
 TEMPLATE_PATH="/etc/alertmanager/alertmanager.yml"
