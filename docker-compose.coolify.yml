@@ -1,0 +1,48 @@
+services:
+  # App PHP + Apache (pensado para Coolify)
+  web:
+    build: .
+    ports:
+      # Solo puerto interno; Coolify enruta el dominio a este puerto
+      - "80"
+    volumes:
+      - app_images:/var/www/html/assets/images
+      - app_logs:/var/www/html/logs
+      - app_cache:/var/www/html/cache
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_NAME=${DB_NAME:-${MYSQL_DATABASE:-trabajo_final_php}}
+      - DB_USER=${DB_USER:-${MYSQL_USER:-app_user}}
+      - DB_PASS=${DB_PASS:-${MYSQL_PASSWORD:-app_password}}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-trabajo_final_php}
+      - MYSQL_USER=${MYSQL_USER:-app_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-app_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Montar directorio (no archivo) para evitar problemas de bind-mount file/dir en algunos hosts
+      - ./database:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_data:
+  app_images:
+  app_logs:
+  app_cache:
+

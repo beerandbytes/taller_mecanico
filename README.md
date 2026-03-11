@@ -201,7 +201,7 @@ Como base, usa `.env.example` y cambia credenciales para producción:
 
 ### Opción 3: Despliegue en Coolify 🧩
 
-Guía rápida: `docs/COOLIFY_DEPLOYMENT.md`.
+Guía rápida: `docs/COOLIFY_DEPLOYMENT.md` (usa `docker-compose.coolify.yml`).
 - `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`
 - `APP_ENV=production`, `APP_DEBUG=false`
 - (Opcional alertas) `ALERT_EMAIL_TO`, `SMTP_SMARTHOST`, `SMTP_FROM`, `SMTP_AUTH_USERNAME`, `SMTP_AUTH_PASSWORD`
