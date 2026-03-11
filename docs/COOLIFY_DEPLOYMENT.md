@@ -49,6 +49,12 @@ Configura estas variables en Coolify (Resource → **Environment Variables / Sec
 - `DB_USER`
 - `DB_PASS`
 
+**Muy importante (evita “deploy se para” y logs “congelados”):**
+
+- En Docker/Coolify **no uses** `DB_HOST=localhost` (ni `127.0.0.1`, ni `::1`).
+  - Dentro del contenedor, eso apunta al propio contenedor (PHP), no al MySQL.
+  - El `entrypoint` de la app lo detecta y lo fuerza a `mysql:3306`, dejando un aviso en logs.
+
 **Set 2: `MYSQL_*` (si Coolify las inyecta al linkar la BD)**
 
 - `MYSQL_HOST`
@@ -125,6 +131,8 @@ Pasos:
 
 1. Revisa logs del servicio **mysql** y confirma que está “healthy/ready”.
 2. Revisa logs del servicio **web** (PHP) y confirma qué variables de entorno están configuradas.
+   - Si ves algo como `ADVERTENCIA: DB_HOST=localhost dentro de Docker...` significa que venía mal configurado y se ha corregido a `mysql:3306`.
+   - Si el despliegue se corta con `ERROR: MySQL no está disponible...` el log ahora mostrará el “Último error” (DNS, credenciales, TLS, etc.).
 3. Si necesitas ver detalles en pantalla temporalmente: pon `APP_DEBUG=true` y vuelve a desplegar (después vuelve a `false`).
 
 ## 7) Caso real: “la BD existe pero faltan tablas”

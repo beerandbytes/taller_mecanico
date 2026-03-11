@@ -83,6 +83,21 @@ function applyDbEnvAliases(): void {
     }
 }
 
+function isLocalhost(string $host): bool {
+    $host = trim($host);
+    if ($host === '') return false;
+
+    // Strip port for common host:port patterns (avoid touching IPv6 in brackets).
+    if (strpos($host, ':') !== false && strpos($host, ']') === false) {
+        $parts = explode(':', $host);
+        if (count($parts) >= 2) {
+            $host = (string)$parts[0];
+        }
+    }
+
+    return in_array($host, ['localhost', '127.0.0.1', '::1'], true);
+}
+
 // Load environment variables if .env exists
 if (file_exists(__DIR__ . '/../.env')) {
     $lines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -127,6 +142,16 @@ if ($isInfinityfree) {
     $user = envStr('DB_USER') ?? 'if0_40685841';
     $pass = envStr('DB_PASS') ?? '';
 } else {
+    // Guardrail: inside containers, `localhost` points to the container itself (not to MySQL service).
+    $configuredHost = envStr('DB_HOST');
+    if ($runningInContainer && $configuredHost !== null && isLocalhost($configuredHost)) {
+        $replacementHost = envStr('MYSQL_HOST') ?? envStr('MARIADB_HOST') ?? 'mysql';
+        error_log("ADVERTENCIA: DB_HOST={$configuredHost} dentro de un contenedor no es válido. Usando {$replacementHost}.");
+        putenv('DB_HOST=' . $replacementHost);
+        $_ENV['DB_HOST'] = $replacementHost;
+        $_SERVER['DB_HOST'] = $replacementHost;
+    }
+
     // Prefer Docker service name inside containers; localhost for local dev
     $host = envStr('DB_HOST') ?? ($runningInContainer ? 'mysql' : 'localhost');
     $db   = envStr('DB_NAME') ?? 'trabajo_final_php';

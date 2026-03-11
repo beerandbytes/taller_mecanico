@@ -24,6 +24,30 @@ if [[ -z "$DB_HOSTPORT" ]]; then
   DB_HOSTPORT="3306"
 fi
 
+is_localhost_host() {
+  case "$1" in
+    localhost|127.0.0.1|::1) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# En contenedores, `localhost` apunta al propio contenedor. Si llega desde un .env local o una mala config en
+# Coolify, forzamos el host al servicio de red (MYSQL_HOST si existe, si no `mysql`).
+if [ -f "/.dockerenv" ] && is_localhost_host "$DB_HOSTNAME"; then
+  FALLBACK_HOST="${MYSQL_HOST:-mysql}"
+  FALLBACK_PORT="${MYSQL_PORT:-3306}"
+  echo "ADVERTENCIA: DB_HOST=${DB_HOSTNAME} dentro de Docker no es válido (apunta al propio contenedor). Usando ${FALLBACK_HOST}:${FALLBACK_PORT}."
+  DB_HOSTNAME="$FALLBACK_HOST"
+  DB_HOSTPORT="$FALLBACK_PORT"
+fi
+
+# Propagar la normalización al entorno del proceso (Apache/PHP y scripts que lean getenv).
+export DB_HOST="$DB_HOSTNAME"
+export DB_PORT="$DB_HOSTPORT"
+export DB_USER="$DB_USER"
+export DB_PASS="$DB_PASS"
+export DB_NAME="$DB_NAME"
+
 # Crear archivo temporal .my.cnf para evitar exponer contraseña en procesos
 TMP_CNF=$(mktemp)
 trap "rm -f $TMP_CNF" EXIT
@@ -39,29 +63,36 @@ EOF
 chmod 600 "$TMP_CNF"
 
 mysqladmin_ping() {
-  mysqladmin --defaults-extra-file="$TMP_CNF" --protocol=tcp --connect-timeout=2 ping >/dev/null 2>&1 && return 0
-  # Fallback por compatibilidad (algunas builds no soportan ciertas flags)
-  mysqladmin --defaults-extra-file="$TMP_CNF" ping >/dev/null 2>&1
+  mysqladmin --defaults-extra-file="$TMP_CNF" --protocol=tcp --connect-timeout=2 ping 2>&1
 }
 
 # Esperar a que MySQL esté listo con timeout
-echo "Esperando a que MySQL esté listo..."
-MAX_ATTEMPTS=60
+echo "Esperando a que MySQL esté listo... (host=${DB_HOSTNAME} port=${DB_HOSTPORT} user=${DB_USER} db=${DB_NAME})"
+MAX_ATTEMPTS="${MYSQL_WAIT_MAX_ATTEMPTS:-60}"
+SLEEP_SECONDS="${MYSQL_WAIT_SLEEP_SECONDS:-2}"
 ATTEMPT=0
 MYSQL_READY=0
+LAST_ERR=""
 
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-    if mysqladmin_ping; then
+    if OUT="$(mysqladmin_ping)"; then
         MYSQL_READY=1
         break
     fi
+    LAST_ERR="$OUT"
     ATTEMPT=$((ATTEMPT + 1))
     echo "Intento $ATTEMPT/$MAX_ATTEMPTS: MySQL no está listo, esperando..."
-    sleep 2
+    if [ -n "$LAST_ERR" ] && [ $((ATTEMPT % 5)) -eq 0 ]; then
+        echo "Detalle (último error): $LAST_ERR" >&2
+    fi
+    sleep "$SLEEP_SECONDS"
 done
 
 if [ $MYSQL_READY -eq 0 ]; then
     echo "ERROR: MySQL no está disponible después de $MAX_ATTEMPTS intentos" >&2
+    if [ -n "$LAST_ERR" ]; then
+        echo "Último error: $LAST_ERR" >&2
+    fi
     exit 1
 fi
 
