@@ -26,9 +26,13 @@ smtp_auth_password="${SMTP_AUTH_PASSWORD:-}"
 alert_email_to="${ALERT_EMAIL_TO:-}"
 
 if [ -z "$smtp_smarthost" ] || [ -z "$smtp_from" ] || [ -z "$smtp_auth_username" ] || [ -z "$smtp_auth_password" ] || [ -z "$alert_email_to" ]; then
-  echo "ERROR: Missing required env vars for Alertmanager email." >&2
-  echo "Required: SMTP_SMARTHOST, SMTP_FROM, SMTP_AUTH_USERNAME, SMTP_AUTH_PASSWORD, ALERT_EMAIL_TO" >&2
-  exit 1
+  echo "ADVERTENCIA: Faltan variables de entorno SMTP para Alertmanager. Las alertas por email NO funcionarÃ¡n." >&2
+  echo "Continuando con la configuraciÃ³n por defecto..."
+  smtp_smarthost="${smtp_smarthost:-localhost:25}"
+  smtp_from="${smtp_from:-alertmanager@example.com}"
+  smtp_auth_username="${smtp_auth_username:-user}"
+  smtp_auth_password="${smtp_auth_password:-pass}"
+  alert_email_to="${alert_email_to:-admin@example.com}"
 fi
 
 sed \

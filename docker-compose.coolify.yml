@@ -29,6 +29,20 @@ services:
       mysql:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
 
   mysql:
     image: mysql:8.0
@@ -41,6 +55,7 @@ services:
       - mysql_data:/var/lib/mysql
       # Montar directorio (no archivo) para evitar problemas de bind-mount file/dir en algunos hosts
       - ./database:/docker-entrypoint-initdb.d:ro
+      - mysql_backup:/backup
     networks:
       - app-network
       - monitoring-network
@@ -50,10 +65,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2'
+        reservations:
+          memory: 512M
+          cpus: '1'
 
   # Prometheus - Metrics Collection & Alerting
   prometheus:
     image: prom/prometheus:latest
+    user: root
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
@@ -70,10 +94,25 @@ services:
     restart: unless-stopped
     depends_on:
       - alertmanager
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   # Alertmanager - Alert Notifications
   alertmanager:
     image: prom/alertmanager:latest
+    user: root
     ports:
       - "${ALERTMANAGER_PORT:-9093}:9093"
     volumes:
@@ -90,6 +129,20 @@ services:
     networks:
       - monitoring-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
 
   # Grafana - Dashboards & Visualization
   grafana:
@@ -109,6 +162,20 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
 
   # Node Exporter - System Metrics
   node-exporter:
@@ -118,10 +185,24 @@ services:
     networks:
       - monitoring-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
 
   # MySQL Exporter - Database Metrics
   mysqld-exporter:
     image: prom/mysqld-exporter:latest
+    user: root
     ports:
       - "9104:9104"
     environment:
@@ -132,10 +213,56 @@ services:
       - ./monitoring/mysqld_exporter/entrypoint.sh:/scripts/entrypoint.sh:ro
     entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /scripts/entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - monitoring-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9104/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.25'
+
+  # Backup Service - Daily MySQL Backups
+  backup:
+    build:
+      context: .
+      dockerfile: docker/backup.Dockerfile
+    volumes:
+      - mysql_backup:/backup
+      - mysql_data:/var/lib/mysql:ro
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-trabajo_final_php}
+      - BACKUP_RETENTION_DAYS=7
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}  # Daily at 2 AM by default
+    networks:
+      - app-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
 
 networks:
   app-network:
@@ -145,6 +272,8 @@ networks:
 
 volumes:
   mysql_data:
+    driver: local
+  mysql_backup:
     driver: local
   prometheus_data:
     driver: local

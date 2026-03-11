@@ -1,4 +1,4 @@
-﻿#!/bin/sh
+#!/bin/sh
 set -e
 # Entrypoint script for mysqld-exporter
 # Generates .my.cnf file from environment variables
@@ -40,6 +40,8 @@ if command -v mysql >/dev/null 2>&1; then
     MYSQL_CLIENT="mysql"
 elif [ -f /usr/bin/mysql ]; then
     MYSQL_CLIENT="/usr/bin/mysql"
+elif [ -f /usr/local/bin/mysql ]; then
+    MYSQL_CLIENT="/usr/local/bin/mysql"
 else
     echo "ADVERTENCIA: mysql client no encontrado, saltando verificaciÃ³n de conectividad"
     MYSQL_CLIENT=""
