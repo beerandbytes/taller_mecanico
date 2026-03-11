@@ -57,8 +57,7 @@ services:
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./monitoring/prometheus:/etc/prometheus:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -78,8 +77,7 @@ services:
     ports:
       - "${ALERTMANAGER_PORT:-9093}:9093"
     volumes:
-      - ./monitoring/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tpl:ro
-      - ./monitoring/prometheus/alertmanager-entrypoint.sh:/entrypoint.sh:ro
+      - ./monitoring/prometheus:/etc/alertmanager:ro
       - alertmanager_data:/alertmanager
     environment:
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
@@ -88,7 +86,7 @@ services:
       - SMTP_AUTH_USERNAME=${SMTP_AUTH_USERNAME:-}
       - SMTP_AUTH_PASSWORD=${SMTP_AUTH_PASSWORD:-}
       - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
+    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /etc/alertmanager/alertmanager-entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
     networks:
       - monitoring-network
     restart: unless-stopped
@@ -129,8 +127,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
     volumes:
-      - ./monitoring/mysqld_exporter/entrypoint.sh:/entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
+      - ./monitoring/mysqld_exporter:/scripts:ro
+    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /scripts/entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
     depends_on:
       - mysql
     networks:

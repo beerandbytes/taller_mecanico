@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-TEMPLATE_PATH="/etc/alertmanager/alertmanager.yml.tpl"
-OUT_PATH="/etc/alertmanager/alertmanager.yml"
+TEMPLATE_PATH="/etc/alertmanager/alertmanager.yml"
+OUT_PATH="/alertmanager/alertmanager.yml"
 
 escape_sed_repl() {
   # Escape for sed replacement (delimiter: |)
