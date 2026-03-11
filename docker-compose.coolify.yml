@@ -22,6 +22,9 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-trabajo_final_php}
       - MYSQL_USER=${MYSQL_USER:-app_user}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-app_password}
+    networks:
+      - app-network
+      - monitoring-network
     depends_on:
       mysql:
         condition: service_healthy
@@ -38,6 +41,9 @@ services:
       - mysql_data:/var/lib/mysql
       # Montar directorio (no archivo) para evitar problemas de bind-mount file/dir en algunos hosts
       - ./database:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+      - monitoring-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
@@ -45,8 +51,110 @@ services:
       timeout: 5s
       retries: 10
 
+  # Prometheus - Metrics Collection & Alerting
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    depends_on:
+      - alertmanager
+
+  # Alertmanager - Alert Notifications
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - ./monitoring/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./monitoring/prometheus/alertmanager-entrypoint.sh:/entrypoint.sh:ro
+      - alertmanager_data:/alertmanager
+    environment:
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
+      - SMTP_SMARTHOST=${SMTP_SMARTHOST:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SMTP_AUTH_USERNAME=${SMTP_AUTH_USERNAME:-}
+      - SMTP_AUTH_PASSWORD=${SMTP_AUTH_PASSWORD:-}
+      - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
+    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # Grafana - Dashboards & Visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Node Exporter - System Metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # MySQL Exporter - Database Metrics
+  mysqld-exporter:
+    image: prom/mysqld-exporter:latest
+    ports:
+      - "9104:9104"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
+    volumes:
+      - ./monitoring/mysqld_exporter/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
+    depends_on:
+      - mysql
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+  monitoring-network:
+    driver: bridge
+
 volumes:
   mysql_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  alertmanager_data:
+    driver: local
   app_images:
+    driver: local
   app_logs:
+    driver: local
   app_cache:
+    driver: local
