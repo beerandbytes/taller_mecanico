@@ -98,19 +98,6 @@ services:
       - app-network
     restart: unless-stopped
 
-  # MySQL Exporter - Database Metrics
-  mysqld-exporter:
-    image: prom/mysqld-exporter:v0.15.0
-    expose:
-      - "9104"
-    environment:
-      - DATA_SOURCE_NAME=${MYSQL_USER}:${MYSQL_PASSWORD}@(${MYSQL_HOST:-mysql}:${MYSQL_PORT:-3306})/
-    networks:
-      - app-network
-    restart: unless-stopped
-    depends_on:
-      - mysql
-
 networks:
   app-network:
     driver: bridge
