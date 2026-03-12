@@ -3,12 +3,10 @@ services:
   # Prometheus - Metrics Collection & Alerting
   prometheus:
     image: prom/prometheus:v2.45.0
-    user: root
     ports:
-      - "9090"
+      - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_config:/etc/prometheus:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -23,11 +21,9 @@ services:
   # Alertmanager - Alert Notifications
   alertmanager:
     image: prom/alertmanager:v0.26.0
-    user: root
     ports:
-      - "9093"
+      - "9093:9093"
     volumes:
-      - ./monitoring/alertmanager:/etc/alertmanager/config:ro
       - alertmanager_data:/alertmanager
     environment:
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
@@ -36,7 +32,6 @@ services:
       - SMTP_AUTH_USERNAME=${SMTP_AUTH_USERNAME:-}
       - SMTP_AUTH_PASSWORD=${SMTP_AUTH_PASSWORD:-}
       - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /etc/alertmanager/config/alertmanager-entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
     networks:
       - monitoring-network
     restart: unless-stopped
@@ -45,15 +40,13 @@ services:
   grafana:
     image: grafana/grafana:10.2.0
     ports:
-      - "3000"
+      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
       - monitoring-network
     restart: unless-stopped
@@ -63,45 +56,19 @@ services:
   # Node Exporter - System Metrics
   node-exporter:
     image: prom/node-exporter:v1.6.1
-    expose:
-      - "9100"
+    ports:
+      - "9100:9100"
     networks:
       - monitoring-network
     restart: unless-stopped
 
-  # MySQL Exporter - Database Metrics (DB gestionada por Coolify)
+  # MySQL Exporter - Database Metrics
   mysqld-exporter:
-    image: prom/mysqld-exporter:v0.15.1
-    user: root
-    expose:
-      - "9104"
+    image: prom/mysqld-exporter:v0.15.0
+    ports:
+      - "9104:9104"
     environment:
-      - MYSQL_HOST=${MYSQL_HOST:-mysql}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
-    volumes:
-      - ./monitoring/mysqld_exporter/entrypoint.sh:/scripts/entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /scripts/entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-
-  # Backup Service - Daily MySQL Backups (DB gestionada por Coolify)
-  backup:
-    build:
-      context: .
-      dockerfile: docker/backup.Dockerfile
-    volumes:
-      - mysql_backup:/backup
-    environment:
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-trabajo_final_php}
-      - BACKUP_RETENTION_DAYS=7
-      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
+      - DATA_SOURCE_NAME=${MYSQL_USER}:${MYSQL_PASSWORD}@(${MYSQL_HOST:-mysql}:${MYSQL_PORT:-3306})/
     networks:
       - monitoring-network
     restart: unless-stopped
@@ -111,12 +78,7 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_backup:
-    driver: local
+  prometheus_config:
   prometheus_data:
-    driver: local
   grafana_data:
-    driver: local
   alertmanager_data:
-    driver: local
-

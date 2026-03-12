@@ -1,7 +1,6 @@
 .git
 .gitignore
 .gitattributes
-*.md
 .env
 .env.local
 node_modules
@@ -10,16 +9,6 @@ node_modules
 *.log
 *.tmp
 *.swp
-*.swo
 *~
 .DS_Store
 Thumbs.db
-docker-compose.yml
-Dockerfile
-.dockerignore
-# Exclude most monitoring files - they are used by pre-built images, not the app build
-# But include subdirectories needed for Prometheus configuration
-monitoring/
-!monitoring/prometheus/
-!monitoring/alertmanager/
-!monitoring/php-exporter/

@@ -12,12 +12,6 @@ services:
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
-      # Preferimos MYSQL_* para soportar tanto:
-      # - MySQL dentro del mismo Compose (host: mysql)
-      # - MySQL gestionado por Coolify (Coolify suele inyectar MYSQL_*)
-      #
-      # La app normaliza MYSQL_* -> DB_* en runtime (entrypoint + config/database.php).
-      # Nota: usando MySQL gestionado por Coolify, estas variables deben venir del "link" de la DB.
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -25,7 +19,6 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - app-network
-      - monitoring-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
@@ -34,7 +27,8 @@ services:
       retries: 3
       start_period: 40s
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   # MySQL Database
   mysql:
@@ -48,7 +42,6 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - app-network
-      - monitoring-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
@@ -63,17 +56,14 @@ services:
     expose:
       - "9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
     networks:
-      - monitoring-network
+      - app-network
     restart: unless-stopped
 
   # Grafana - Dashboards & Visualization
@@ -87,10 +77,8 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
-      - monitoring-network
+      - app-network
     restart: unless-stopped
     depends_on:
       - prometheus
@@ -101,19 +89,9 @@ services:
     expose:
       - "9093"
     volumes:
-      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/config/alertmanager.yml:ro
-      - ./monitoring/alertmanager/alertmanager-entrypoint.sh:/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
-    environment:
-      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
-      - SMTP_SMARTHOST=${SMTP_SMARTHOST:-}
-      - SMTP_FROM=${SMTP_FROM:-}
-      - SMTP_AUTH_USERNAME=${SMTP_AUTH_USERNAME:-}
-      - SMTP_AUTH_PASSWORD=${SMTP_AUTH_PASSWORD:-}
-      - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
     networks:
-      - monitoring-network
+      - app-network
     restart: unless-stopped
 
   # Node Exporter - System Metrics
@@ -122,43 +100,16 @@ services:
     expose:
       - "9100"
     networks:
-      - monitoring-network
+      - app-network
     restart: unless-stopped
 
   # MySQL Exporter - Database Metrics
   mysqld-exporter:
-    image: prom/mysqld-exporter:v0.15.1
+    image: prom/mysqld-exporter:v0.15.0
     expose:
       - "9104"
     environment:
-      - MYSQL_HOST=${MYSQL_HOST:-mysql}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
-    volumes:
-      - ./monitoring/mysqld_exporter/entrypoint.sh:/entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-    depends_on:
-      - mysql
-
-  # Backup Service - Daily MySQL Backups
-  backup:
-    build:
-      context: .
-      dockerfile: docker/backup.Dockerfile
-    volumes:
-      - mysql_backup:/backup
-    environment:
-      - MYSQL_HOST=${MYSQL_HOST:-mysql}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER:-root}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-trabajo_final_php}
-      - BACKUP_RETENTION_DAYS=7
-      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}  # Daily at 2 AM by default
+      - DATA_SOURCE_NAME=${MYSQL_USER}:${MYSQL_PASSWORD}@(${MYSQL_HOST:-mysql}:${MYSQL_PORT:-3306})/
     networks:
       - app-network
     restart: unless-stopped
@@ -168,12 +119,8 @@ services:
 networks:
   app-network:
     driver: bridge
-  monitoring-network:
-    driver: bridge
 
 volumes:
-  mysql_backup:
-    driver: local
   mysql_data:
     driver: local
   prometheus_data:
