@@ -39,15 +39,17 @@ docker-compose ps
 
 ### Paso 2: Acceder a los Servicios
 
-- **Grafana Dashboard**: http://localhost:3000
+- **Grafana Dashboard**: http://localhost:3000 (despliegue local con Docker)
   - Usuario: `admin`
   - Contraseña: `admin123` (configurable en `.env`)
 
-- **Prometheus**: http://localhost:9090
+- **Prometheus**: http://localhost:9090 (despliegue local con Docker)
   - Consultas y alertas
 
-- **AlertManager**: http://localhost:9093
+- **AlertManager**: http://localhost:9093 (despliegue local con Docker)
   - Gestión de alertas
+
+> En Coolify, la forma recomendada es acceder a estos servicios mediante **Domains/Routes** apuntando a los puertos internos:\n> - Grafana `3000`\n> - Prometheus `9090`\n> - Alertmanager `9093`\n>\n> Así evitas publicar puertos fijos al host y no tendrás colisiones entre despliegues.
 
 ### Paso 3: Verificar Métricas
 

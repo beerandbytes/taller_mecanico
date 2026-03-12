@@ -208,11 +208,16 @@ Guía rápida: `docs/COOLIFY_DEPLOYMENT.md`.
 - `APP_ENV=production`, `APP_DEBUG=false`
 - (Opcional alertas) `ALERT_EMAIL_TO`, `SMTP_SMARTHOST`, `SMTP_FROM`, `SMTP_AUTH_USERNAME`, `SMTP_AUTH_PASSWORD`
 
+> Importante: En Coolify evita publicar puertos fijos al host (por ejemplo `9090:9090`, `9093:9093`, `3000:3000`), porque pueden colisionar con otros stacks y hacer fallar el deploy. Usa puertos internos y expón los servicios con **Domains/Routes** de Coolify.
+
 #### 4) Configurar dominio y HTTPS (opción A: sin Cloudflare Tunnel)
 
 1. En Dokploy, añade un **Domain** a la app/servicio `web` (puerto `80`).
 2. Activa **HTTPS/Let’s Encrypt** en el dominio.
-3. (Opcional) Añade otro dominio al servicio `grafana` (puerto `3000`) si quieres exponer Grafana.
+3. (Opcional) Añade dominios/rutas adicionales en Coolify:
+   - `grafana.tudominio.com` → servicio `grafana` puerto `3000`
+   - `prometheus.tudominio.com` → servicio `prometheus` puerto `9090`
+   - `alertmanager.tudominio.com` → servicio `alertmanager` puerto `9093`
 
 #### 5) Publicar el proyecto con Cloudflare Tunnel (opción B: sin abrir puertos 80/443)
 

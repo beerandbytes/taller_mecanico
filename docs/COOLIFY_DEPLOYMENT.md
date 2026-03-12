@@ -37,6 +37,35 @@ Este repo ya soporta ambos: `DB_*` y alias `MYSQL_*` (y en `docker-compose.cooli
 
 Esto te permite desplegar/actualizar la app sin tumbar Prometheus/Grafana y reduce fallos por puertos publicados o healthchecks en servicios auxiliares.
 
+Acceso recomendado (sin publicar puertos fijos al host):
+
+- En Coolify, crea **Domains/Routes** para estos servicios apuntando a sus **puertos internos**:
+  - `grafana.tudominio.com` → `grafana` : `3000`
+  - `prometheus.tudominio.com` → `prometheus` : `9090`
+  - `alertmanager.tudominio.com` → `alertmanager` : `9093`
+
+Esto evita errores tipo `Bind for 0.0.0.0:9093 failed: port is already allocated`.
+
+Nota sobre el scraping de métricas (importante):
+
+- La configuración de Prometheus de este repo apunta por defecto a `web:80` (service discovery dentro de la misma red Docker).
+- Si despliegas **app y monitoring en recursos separados**, `web` solo será resolvible si ambos stacks comparten una red Docker.
+  - Solución simple (sin redes compartidas): despliega todo junto con `docker-compose.coolify.yml`.
+  - Solución avanzada: crea/usa una red externa compartida en Coolify y conecta ambos stacks a esa red, o adapta `monitoring/prometheus/prometheus.yml` para scrapear la URL pública de la app.
+
+## Checklist de verificación (tras el Deploy)
+
+- En Coolify, confirma que cada Domain/Route apunta al servicio y puerto correcto:
+  - `web` → `80`
+  - `grafana` → `3000`
+  - `prometheus` → `9090`
+  - `alertmanager` → `9093`
+- En Prometheus (`/targets`), valida que estos jobs están `UP`:
+  - `prometheus`
+  - `php-app`
+  - `node-exporter`
+  - `mysqld-exporter`
+
 ## 2) Variables de entorno (obligatorio)
 
 Configura estas variables en Coolify (Resource → **Environment Variables / Secrets**).
