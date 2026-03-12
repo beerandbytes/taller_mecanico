@@ -15,7 +15,7 @@ alerting:
 
 # Reglas de alertas
 rule_files:
-  - "/etc/prometheus/config/alerts.yml"
+  - "/etc/prometheus/alerts.yml"
 
 # Configuración de scraping
 scrape_configs:
