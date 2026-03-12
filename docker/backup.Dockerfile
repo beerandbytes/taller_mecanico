@@ -4,7 +4,7 @@ FROM alpine:latest
 RUN apk add --no-cache mysql-client bash
 
 # Copy the backup script (see below)
-COPY scripts/backup.sh /backup.sh
+COPY docker/backup.sh /backup.sh
 RUN chmod +x /backup.sh
 
 # Create backup directory

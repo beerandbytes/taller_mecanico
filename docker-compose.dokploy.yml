@@ -44,7 +44,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.45.0
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
@@ -61,10 +61,10 @@ services:
 
   # Alertmanager (notificaciones de alertas)
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.26.0
     volumes:
-      - ./monitoring/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tpl:ro
-      - ./monitoring/prometheus/alertmanager-entrypoint.sh:/entrypoint.sh:ro
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./monitoring/alertmanager/alertmanager-entrypoint.sh:/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
     environment:
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
@@ -81,7 +81,7 @@ services:
 
   # Grafana
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.0
     ports:
       # Puerto interno para que Dokploy pueda enrutar un dominio (opcional)
       - "3000"
@@ -99,12 +99,12 @@ services:
 
   # Node Exporter (métricas del sistema)
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.6.1
     restart: unless-stopped
 
   # MySQL Exporter (métricas de base de datos)
   mysqld-exporter:
-    image: prom/mysqld-exporter:latest
+    image: prom/mysqld-exporter:v0.15.1
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
     volumes:
@@ -135,3 +135,7 @@ volumes:
   app_images:
   app_logs:
   app_cache:
+
+networks:
+  app-network:
+    driver: bridge

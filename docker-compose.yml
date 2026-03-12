@@ -24,6 +24,12 @@ services:
       - app-network
       - monitoring-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Base de datos MySQL
   mysql:
@@ -52,7 +58,7 @@ services:
 
   # Prometheus
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.45.0
     container_name: taller_mecanico_prometheus
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
@@ -74,7 +80,7 @@ services:
 
   # Alertmanager (notificaciones de alertas)
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.26.0
     container_name: taller_mecanico_alertmanager
     ports:
       - "${ALERTMANAGER_PORT:-9093}:9093"
@@ -96,7 +102,7 @@ services:
 
   # Grafana
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.0
     container_name: taller_mecanico_grafana
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
@@ -118,7 +124,7 @@ services:
   # Nota: En Windows, node-exporter puede tener limitaciones con los volúmenes del sistema
   # Para producción en Linux, descomenta y ajusta los volúmenes según sea necesario
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.6.1
     container_name: taller_mecanico_node_exporter
     ports:
       - "9100:9100"
@@ -139,7 +145,7 @@ services:
   # MySQL Exporter (métricas de base de datos)
   # Nota: mysqld-exporter v0.15.0+ requiere --config.my-cnf en lugar de DATA_SOURCE_NAME
   mysqld-exporter:
-    image: prom/mysqld-exporter:latest
+    image: prom/mysqld-exporter:v0.15.1
     container_name: taller_mecanico_mysqld_exporter
     ports:
       - "9104:9104"

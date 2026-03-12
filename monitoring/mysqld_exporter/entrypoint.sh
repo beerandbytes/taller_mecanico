@@ -1,12 +1,13 @@
 #!/bin/sh
 
 # Create my.cnf file from environment variables
+# Note: Using MYSQL_PASSWORD to match docker-compose environment variable names
 cat <<EOF > /tmp/.my.cnf
 [client]
 host=${MYSQL_HOST}
 port=${MYSQL_PORT}
-user=root
-password=${MYSQL_ROOT_PASSWORD}
+user=${MYSQL_USER:-root}
+password=${MYSQL_PASSWORD}
 EOF
 
 chmod 600 /tmp/.my.cnf

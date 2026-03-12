@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   # App PHP + Apache (pensado para Coolify)
   web:
@@ -56,7 +57,7 @@ services:
 
   # Prometheus - Metrics Collection
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.45.0
     expose:
       - "9090"
     volumes:
@@ -72,7 +73,7 @@ services:
 
   # Grafana - Dashboards & Visualization
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.2.0
     expose:
       - "3000"
     environment:
@@ -109,14 +110,6 @@ services:
     restart: unless-stopped
     depends_on:
       - mysql
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
 
 networks:
   app-network:
