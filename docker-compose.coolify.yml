@@ -25,6 +25,7 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - app-network
+      - monitoring-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
@@ -47,6 +48,7 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - app-network
+      - monitoring-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
@@ -92,6 +94,55 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
+
+  # Alertmanager - Alert Notifications
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    expose:
+      - "9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/config/alertmanager.yml:ro
+      - ./monitoring/alertmanager/alertmanager-entrypoint.sh:/entrypoint.sh:ro
+      - alertmanager_data:/alertmanager
+    environment:
+      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
+      - SMTP_SMARTHOST=${SMTP_SMARTHOST:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SMTP_AUTH_USERNAME=${SMTP_AUTH_USERNAME:-}
+      - SMTP_AUTH_PASSWORD=${SMTP_AUTH_PASSWORD:-}
+      - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
+    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # Node Exporter - System Metrics
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    expose:
+      - "9100"
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+
+  # MySQL Exporter - Database Metrics
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    expose:
+      - "9104"
+    environment:
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
+    volumes:
+      - ./monitoring/mysqld_exporter/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
+    networks:
+      - monitoring-network
+    restart: unless-stopped
+    depends_on:
+      - mysql
 
   # Backup Service - Daily MySQL Backups
   backup:

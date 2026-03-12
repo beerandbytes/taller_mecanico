@@ -17,5 +17,9 @@ Thumbs.db
 docker-compose.yml
 Dockerfile
 .dockerignore
+# Exclude most monitoring files - they are used by pre-built images, not the app build
+# But include subdirectories needed for Prometheus configuration
 monitoring/
-!monitoring/php-exporter/metrics.php
+!monitoring/prometheus/
+!monitoring/alertmanager/
+!monitoring/php-exporter/

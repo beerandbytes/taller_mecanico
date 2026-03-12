@@ -19,8 +19,6 @@ services:
     networks:
       - monitoring-network
     restart: unless-stopped
-    depends_on:
-      - alertmanager
 
   # Alertmanager - Alert Notifications
   alertmanager:
