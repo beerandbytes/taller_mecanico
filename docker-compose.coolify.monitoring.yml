@@ -109,7 +109,7 @@ services:
       - "9104"
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
-      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
     volumes:
       - ./monitoring/mysqld_exporter/entrypoint.sh:/scripts/entrypoint.sh:ro

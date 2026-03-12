@@ -38,10 +38,10 @@ services:
     expose:
       - "9090"
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus:ro
+      - ./monitoring/prometheus:/etc/prometheus/config:ro
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/etc/prometheus/config/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
     networks:
