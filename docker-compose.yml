@@ -79,7 +79,7 @@ services:
     ports:
       - "${ALERTMANAGER_PORT:-9093}:9093"
     volumes:
-      - ./monitoring/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./monitoring/prometheus/alertmanager.yml:/etc/alertmanager/config/alertmanager.yml:ro
       - ./monitoring/prometheus/alertmanager-entrypoint.sh:/entrypoint.sh:ro
       - alertmanager_data:/alertmanager
     environment:
