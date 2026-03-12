@@ -60,7 +60,7 @@ services:
     expose:
       - "9090"
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus:ro
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
