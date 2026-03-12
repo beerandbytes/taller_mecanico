@@ -9,7 +9,7 @@ RUN apk add --no-cache \
 
 # Copy backup script
 COPY docker/backup.sh /usr/local/bin/backup.sh
-RUN chmod +x /usr/local/bin/backup.sh
+RUN sed -i 's/\r$//' /usr/local/bin/backup.sh && chmod +x /usr/local/bin/backup.sh
 
 # Create backup directory
 RUN mkdir -p /backup

@@ -8,8 +8,8 @@ Este repo ya soporta ambos: `DB_*` y alias `MYSQL_*` (y en `docker-compose.cooli
 
 ## Antes de empezar (recomendado)
 
-- Para Coolify, usa `docker-compose.coolify.yml` (mínimo: app + MySQL; sin monitorización).
-- Si quieres monitorización (Prometheus/Grafana), despliega esos servicios en un segundo stack o adapta `docker-compose.dokploy.yml` más adelante.
+- Para Coolify, lo más estable es desplegar **solo la app** y usar BD gestionada por Coolify.
+- Si quieres monitorización (Prometheus/Grafana), despliega esos servicios en un **segundo stack** (recomendado) para evitar acoplamiento y problemas de puertos/healthchecks.
 - No subas `.env` al repo. En Coolify configura variables/secretos desde la UI.
 - Decide **una** de estas estrategias de BD:
   - **A) MySQL dentro del mismo Docker Compose** (más simple).
@@ -29,6 +29,13 @@ Este repo ya soporta ambos: `DB_*` y alias `MYSQL_*` (y en `docker-compose.cooli
 1. Crea una **Database (MySQL)** en Coolify.
 2. En tu app (resource), usa **Link/Connect to database** (nombre puede variar por versión).
 3. Verifica que Coolify inyecta variables tipo `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` (o equivalentes).
+
+### Opción C (recomendada si quieres monitorización): 2 stacks separados
+
+- **Stack 1 (app)**: usa `docker-compose.coolify.app.yml` (solo `web`).
+- **Stack 2 (monitoring + backup)**: usa `docker-compose.coolify.monitoring.yml`.
+
+Esto te permite desplegar/actualizar la app sin tumbar Prometheus/Grafana y reduce fallos por puertos publicados o healthchecks en servicios auxiliares.
 
 ## 2) Variables de entorno (obligatorio)
 

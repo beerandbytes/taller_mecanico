@@ -1,53 +1,10 @@
 services:
-  # App PHP + Apache (pensado para Coolify)
-  web:
-    build: .
-    ports:
-      # Solo puerto interno; Coolify enruta el dominio a este puerto
-      - "80"
-    volumes:
-      - app_images:/var/www/html/assets/images
-      - app_logs:/var/www/html/logs
-      - app_cache:/var/www/html/cache
-    environment:
-      - APP_ENV=${APP_ENV:-production}
-      - APP_DEBUG=${APP_DEBUG:-false}
-      # Preferimos MYSQL_* para soportar tanto:
-      # - MySQL dentro del mismo Compose (host: mysql)
-      # - MySQL gestionado por Coolify (Coolify suele inyectar MYSQL_*)
-      #
-      # La app normaliza MYSQL_* -> DB_* en runtime (entrypoint + config/database.php).
-      # Nota: usando MySQL gestionado por Coolify, estas variables deben venir del "link" de la DB.
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-    networks:
-      - app-network
-      - monitoring-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
-
   # Prometheus - Metrics Collection & Alerting
   prometheus:
     image: prom/prometheus:latest
     user: root
     ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
+      - "9090"
     volumes:
       - ./monitoring/prometheus:/etc/prometheus/config:ro
       - prometheus_data:/prometheus
@@ -76,7 +33,7 @@ services:
     image: prom/alertmanager:latest
     user: root
     ports:
-      - "${ALERTMANAGER_PORT:-9093}:9093"
+      - "9093"
     volumes:
       - ./monitoring/prometheus:/etc/alertmanager/config:ro
       - alertmanager_data:/alertmanager
@@ -104,7 +61,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "${GRAFANA_PORT:-3000}:3000"
+      - "3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
@@ -144,14 +101,13 @@ services:
           memory: 64M
           cpus: '0.25'
 
-  # MySQL Exporter - Database Metrics
+  # MySQL Exporter - Database Metrics (DB gestionada por Coolify)
   mysqld-exporter:
     image: prom/mysqld-exporter:latest
     user: root
     ports:
       - "9104:9104"
     environment:
-      # Usar la DB gestionada por Coolify (host/puerto inyectados)
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
       - MYSQL_HOST=${MYSQL_HOST}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
@@ -170,7 +126,7 @@ services:
           memory: 64M
           cpus: '0.25'
 
-  # Backup Service - Daily MySQL Backups
+  # Backup Service - Daily MySQL Backups (DB gestionada por Coolify)
   backup:
     build:
       context: .
@@ -184,9 +140,9 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-trabajo_final_php}
       - BACKUP_RETENTION_DAYS=7
-      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}  # Daily at 2 AM by default
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-0 2 * * *}
     networks:
-      - app-network
+      - monitoring-network
     restart: unless-stopped
     deploy:
       resources:
@@ -198,8 +154,6 @@ services:
           cpus: '0.25'
 
 networks:
-  app-network:
-    driver: bridge
   monitoring-network:
     driver: bridge
 
@@ -212,9 +166,4 @@ volumes:
     driver: local
   alertmanager_data:
     driver: local
-  app_images:
-    driver: local
-  app_logs:
-    driver: local
-  app_cache:
-    driver: local
+

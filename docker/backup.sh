@@ -67,15 +67,3 @@ echo "Current backups:"
 ls -lh "${BACKUP_DIR}"/backup_*.sql.gz 2>/dev/null || echo "No backups found"
 
 exit 0
-</parameter>
-<task_progress>
-- [x] Read alertmanager.yml template to verify path structure
-- [x] Add resource limits to docker-compose.coolify.yml
-- [x] Add backup strategy for MySQL
-- [x] Add healthchecks to additional services
-- [x] Create backup service/script
-- [ ] Validate the configuration
-- [ ] Add backup service to docker-compose
-</parameter>
-</write_to_file>
-</tool_call>
