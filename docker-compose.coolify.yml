@@ -50,20 +50,13 @@ services:
       retries: 3
       start_period: 30s
 
-  # Prometheus - Metrics Collection
+  # Prometheus - Metrics Collection (uses default config)
   prometheus:
     image: prom/prometheus:v2.45.0
     expose:
       - "9090"
     volumes:
       - prometheus_data:/prometheus
-    command:
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - app-network
     restart: unless-stopped
