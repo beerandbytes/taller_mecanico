@@ -2,9 +2,11 @@
 set -e
 
 # Crear directorio de logs si no existe
+echo "Creating logs directory..."
 mkdir -p /var/www/html/logs
 chown -R www-data:www-data /var/www/html/logs
 chmod -R 755 /var/www/html/logs
+echo "Logs directory created."
 
 # Normalizar variables de BD (Coolify/managed DBs suelen exponer MYSQL_*)
 DB_HOST="${DB_HOST:-${MYSQL_HOST:-mysql}}"

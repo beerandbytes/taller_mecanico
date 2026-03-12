@@ -47,10 +47,12 @@ RUN echo "PassEnv DB_HOST DB_PORT DB_NAME DB_USER DB_PASS APP_ENV APP_DEBUG DEPL
 COPY . /var/www/html/
 
 # Crear directorios necesarios y configurar permisos
-RUN mkdir -p /var/www/html/logs /var/www/html/cache /var/www/html/assets/images \
+RUN echo "Creating directories and setting permissions..." && \
+    mkdir -p /var/www/html/logs /var/www/html/cache /var/www/html/assets/images \
     && touch /var/www/html/import_log.txt \
     && chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html
+    && chmod -R 775 /var/www/html && \
+    echo "Directories created and permissions set."
 
 # Copiar endpoint de métricas
 COPY monitoring/php-exporter/metrics.php /var/www/html/metrics.php

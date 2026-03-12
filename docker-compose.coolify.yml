@@ -2,8 +2,7 @@ services:
   # App PHP + Apache (pensado para Coolify)
   web:
     build: .
-    ports:
-      # Solo puerto interno; Coolify enruta el dominio a este puerto
+    expose:
       - "80"
     volumes:
       - app_images:/var/www/html/assets/images
@@ -25,151 +24,24 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     networks:
       - app-network
-      - monitoring-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
+    # healthcheck and deploy sections temporarily disabled for debugging
 
-  # Prometheus - Metrics Collection & Alerting
-  prometheus:
-    image: prom/prometheus:latest
-    user: root
-    ports:
-      - "9090"
-    volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-    depends_on:
-      - alertmanager
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
+  # Monitoring services temporarily disabled for debugging
+  # prometheus:
+  #   ...
 
-  # Alertmanager - Alert Notifications
-  alertmanager:
-    image: prom/alertmanager:latest
-    user: root
-    ports:
-      - "9093"
-    volumes:
-      - ./monitoring/prometheus:/etc/alertmanager/config:ro
-      - alertmanager_data:/alertmanager
-    environment:
-      - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
-      - SMTP_SMARTHOST=${SMTP_SMARTHOST:-}
-      - SMTP_FROM=${SMTP_FROM:-}
-      - SMTP_AUTH_USERNAME=${SMTP_AUTH_USERNAME:-}
-      - SMTP_AUTH_PASSWORD=${SMTP_AUTH_PASSWORD:-}
-      - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /etc/alertmanager/config/alertmanager-entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /tmp/entrypoint.sh"]
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
+  # alertmanager:
+  #   ...
 
-  # Grafana - Dashboards & Visualization
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin123}
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-    depends_on:
-      - prometheus
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
+  # grafana:
+  #   ...
 
-  # Node Exporter - System Metrics
-  node-exporter:
-    image: prom/node-exporter:latest
-    expose:
-      - "9100"
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.5'
-        reservations:
-          memory: 64M
-          cpus: '0.25'
+  # node-exporter:
+  #   ...
 
-  # MySQL Exporter - Database Metrics
-  mysqld-exporter:
-    image: prom/mysqld-exporter:latest
-    user: root
-    expose:
-      - "9104"
-    environment:
-      # Usar la DB gestionada por Coolify (host/puerto inyectados)
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
-      - MYSQL_HOST=${MYSQL_HOST}
-      - MYSQL_PORT=${MYSQL_PORT:-3306}
-    volumes:
-      - ./monitoring/mysqld_exporter/entrypoint.sh:/scripts/entrypoint.sh:ro
-    entrypoint: ["/bin/sh", "-c", "sed 's/\\r$//' /scripts/entrypoint.sh > /tmp/entrypoint.sh && chmod +x /tmp/entrypoint.sh && /bin/sh /tmp/entrypoint.sh"]
-    networks:
-      - monitoring-network
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.5'
-        reservations:
-          memory: 64M
-          cpus: '0.25'
+  # mysqld-exporter:
+  #   ...
 
   # Backup Service - Daily MySQL Backups
   backup:
