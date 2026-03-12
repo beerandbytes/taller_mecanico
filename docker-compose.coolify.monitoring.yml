@@ -35,7 +35,7 @@ services:
     ports:
       - "9093"
     volumes:
-      - ./monitoring/prometheus:/etc/alertmanager/config:ro
+      - ./monitoring/alertmanager:/etc/alertmanager/config:ro
       - alertmanager_data:/alertmanager
     environment:
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-}
