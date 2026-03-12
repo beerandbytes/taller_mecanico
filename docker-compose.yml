@@ -63,7 +63,7 @@ services:
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus:ro
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     # Nota: La retención está hardcodeada a 15d. Para cambiarla, edita esta línea o usa un script de entrypoint
     command:
