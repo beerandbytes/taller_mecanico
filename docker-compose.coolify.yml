@@ -17,7 +17,7 @@ services:
       #
       # La app normaliza MYSQL_* -> DB_* en runtime (entrypoint + config/database.php).
       # Nota: usando MySQL gestionado por Coolify, estas variables deben venir del "link" de la DB.
-      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
@@ -31,6 +31,28 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on:
+      - mysql
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-trabajo_final_php}
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-rootpassword}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # Prometheus - Metrics Collection
   prometheus:
@@ -38,7 +60,7 @@ services:
     expose:
       - "9090"
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus/config:ro
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/config/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/config/prometheus.yml'
@@ -75,7 +97,7 @@ services:
     volumes:
       - mysql_backup:/backup
     environment:
-      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER:-root}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD:-rootpassword}
@@ -85,6 +107,8 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    depends_on:
+      - mysql
     deploy:
       resources:
         limits:
@@ -102,6 +126,8 @@ networks:
 
 volumes:
   mysql_backup:
+    driver: local
+  mysql_data:
     driver: local
   prometheus_data:
     driver: local
