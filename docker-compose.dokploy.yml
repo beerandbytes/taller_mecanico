@@ -37,10 +37,11 @@ services:
       - ./database/database.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "sh", "-c", "mysqladmin ping -h localhost -u root -p$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 15
+      start_period: 60s
 
   # Prometheus
   prometheus:
@@ -107,6 +108,10 @@ services:
     image: prom/mysqld-exporter:v0.15.1
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-app_password}
     volumes:
       - ./monitoring/mysqld_exporter/entrypoint.sh:/entrypoint.sh:ro
     entrypoint:

@@ -1,7 +1,8 @@
 -- Database Creation
 -- Note: Manually create database 'trabajo_final_php' if it doesn't exist. Shared hosting often creates it for you.
--- CREATE DATABASE IF NOT EXISTS trabajo_final_php;
--- USE trabajo_final_php;
+-- The database is auto-created by MySQL Docker image from MYSQL_DATABASE env var
+CREATE DATABASE IF NOT EXISTS trabajo_final_php;
+USE trabajo_final_php;
 
 -- Table: users_data
 CREATE TABLE IF NOT EXISTS users_data (
