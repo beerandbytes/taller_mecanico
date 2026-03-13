@@ -5,12 +5,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// DEBUG: Log access attempt for diagnosis
+error_log('[DEBUG] test-alert-email.php accessed. Session data: ' . json_encode($_SESSION));
+
 if (!isAdmin()) {
+    error_log('[DEBUG] isAdmin() returned false. User role: ' . ($_SESSION['user_role'] ?? 'not set'));
     redirect('../index.php');
 }
-
-$flashSuccess = null;
-$flashError = null;
 
 function sendAlertmanagerTestAlert(array $payload) {
     $url = 'http://alertmanager:9093/api/v2/alerts';
@@ -79,7 +80,7 @@ function sendAlertmanagerTestAlert(array $payload) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!verifyCsrfToken($token)) {
-        $flashError = 'CSRF token inválido. Recarga la página e inténtalo de nuevo.';
+        setFlashMessage('error', 'CSRF token inválido. Recarga la página e inténtalo de nuevo.');
     } else {
         $to = trim($_POST['to'] ?? '');
         $severity = trim($_POST['severity'] ?? 'warning');
@@ -88,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($to !== '' && !validarEmail($to)) {
-            $flashError = 'Email inválido.';
+            setFlashMessage('error', 'Email inválido.');
         } else {
             $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
             $payload = [
@@ -113,11 +114,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             [$ok, $err] = sendAlertmanagerTestAlert($payload);
             if ($ok) {
-                $flashSuccess = $to !== ''
+                setFlashMessage('success', $to !== ''
                     ? "Alerta de prueba enviada. Deberías recibir un email en: $to"
-                    : "Alerta de prueba enviada. Deberías recibir un email en el destinatario configurado en Alertmanager.";
+                    : "Alerta de prueba enviada. Deberías recibir un email en el destinatario configurado en Alertmanager.");
             } else {
-                $flashError = $err ?: 'No se pudo enviar la alerta de prueba.';
+                setFlashMessage('error', $err ?: 'No se pudo enviar la alerta de prueba.');
             }
         }
     }
@@ -132,6 +133,7 @@ require_once '../includes/header.php';
         <a href="index.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
     </div>
 
+    <?php $flashSuccess = getFlashMessage('success'); $flashError = getFlashMessage('error'); ?>
     <?php if ($flashSuccess): ?>
         <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
     <?php endif; ?>
